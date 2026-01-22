@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
 class LoginScreen extends StatefulWidget {
@@ -15,33 +16,57 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isPasswordVisible = false;
   bool _isLoading = false;
 
+    // Function to save the token locally
+  Future<void> _saveToken(String token) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('auth_token', token);
+  }
+
   Future<void> _login() async {
+    // FIX: Use 10.0.2.2 for emulator and 8000 port
+    const String url = 'http://10.0.2.2:8000/api/login/'; 
+
     setState(() {
       _isLoading = true;
     });
 
-    final response = await http.post(
-      Uri.parse('http://[IP_ADDRESS]/api/login/'),
-      body: {
-        'username': _usernameController.text,
-        'password': _passwordController.text,
-      },
-    );
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      // Save token
-      await _saveToken(data['token']);
-      Navigator.pushReplacementNamed(context, '/home');
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invalid credentials')),
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'}, // FIX: Added headers
+        body: jsonEncode({ // FIX: Use jsonEncode
+          'username': _usernameController.text.trim(),
+          'password': _passwordController.text,
+        }),
       );
-    }
 
-    setState(() {
-      _isLoading = false;
-    });
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        await _saveToken(data['token']); // Save the token
+        
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/home');
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Invalid username or password')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Connection error: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -65,9 +90,9 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: _isLoading ? null : _login,
-              child: _isLoading 
-                ? const CircularProgressIndicator(color: Colors.white) 
-                : const Text('Login'),
+              child: _isLoading
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : const Text('Login'),
             ),
             TextButton(
               onPressed: () {
