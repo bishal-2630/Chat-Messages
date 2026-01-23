@@ -1,4 +1,43 @@
 {
-    "buildCommand": "echo 'Using pre-built Flutter web files'",
-    "outputDirectory": "chat_backend/static"
+    "version": 2,
+    "builds": [
+        {
+            "src": "chat_backend/chat_backend/wsgi.py",
+            "use": "@vercel/python",
+            "config": {
+                "maxLambdaSize": "15mb",
+                "runtime": "python3.12"
+            }
+        },
+        {
+            "src": "chat_backend/static/**",
+            "use": "@vercel/static"
+        }
+    ],
+    "routes": [
+        {
+            "src": "/api/(.*)",
+            "dest": "chat_backend/chat_backend/wsgi.py"
+        },
+        {
+            "src": "/static/(.*)",
+            "dest": "/chat_backend/static/$1"
+        },
+        {
+            "src": "/(.*\\.(js|json|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|otf|wasm))",
+            "dest": "/chat_backend/static/$1"
+        },
+        {
+            "src": "/assets/(.*)",
+            "dest": "/chat_backend/static/assets/$1"
+        },
+        {
+            "src": "/icons/(.*)",
+            "dest": "/chat_backend/static/icons/$1"
+        },
+        {
+            "src": "/(.*)",
+            "dest": "/chat_backend/static/index.html"
+        }
+    ]
 }
