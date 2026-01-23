@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'services/background_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
+import 'screens/chat_screen.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
@@ -108,10 +109,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   title: Text(user.username),
                   subtitle: Text(user.isOnline ? 'Online' : 'Offline'),
                   trailing: IconButton(
-                    icon: const Icon(Icons.chat, color: Colors.deepPurple),
+                    icon: const Icon(Icons.chat),
                     onPressed: () {
-                      // Navigate to Chat Screen (Next Step!)
-                      print('Start chat with ${user.username}');
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ChatScreen(
+                            otherUserId: user.id,
+                            otherUsername: user.username,
+                          ),
+                        ),
+                      );
                     },
                   ),
                 );

@@ -2,18 +2,18 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'mqtt_service.dart';
 import 'notification_service.dart';
+import 'package:flutter_background_service_android/flutter_background_service_android.dart';
 
 Future<void> initializeService() async {
   final service = FlutterBackgroundService();
 
-  // Android specific configuration
   const AndroidNotificationChannel channel = AndroidNotificationChannel(
-    'my_foreground', // id
-    'MY FOREGROUND SERVICE', // title
-    description:
-        'This channel is used for important notifications.', // description
+    'my_foreground', 
+    'MY FOREGROUND SERVICE',
+    description: 'This channel is used for important notifications.',
     importance: Importance.low,
   );
 
@@ -28,32 +28,22 @@ Future<void> initializeService() async {
 
   await service.configure(
     androidConfiguration: AndroidConfiguration(
-      // this will be executed when app is in foreground or background in separated isolate
       onStart: onStart,
-
-      // auto start service
       autoStart: true,
       isForegroundMode: true,
-
       notificationChannelId: 'my_foreground',
       initialNotificationTitle: 'AWESOME SERVICE',
       initialNotificationContent: 'Initializing',
       foregroundServiceNotificationId: 888,
     ),
     iosConfiguration: IosConfiguration(
-      // auto start service
       autoStart: true,
-
-      // this will be executed when app is in foreground in separated isolate
       onForeground: onStart,
-
-      // you have to enable background fetch capability on xcode project
       onBackground: onIosBackground,
     ),
   );
 }
 
-// to ensure this executes
 @pragma('vm:entry-point')
 Future<bool> onIosBackground(ServiceInstance service) async {
   return true;
@@ -61,15 +51,16 @@ Future<bool> onIosBackground(ServiceInstance service) async {
 
 @pragma('vm:entry-point')
 void onStart(ServiceInstance service) async {
-  // Only available for flutter 3.0.0 and later
   DartPluginRegistrant.ensureInitialized();
-
-  // Initialize Notification Helper
   await NotificationService.initialize();
 
-  // Initialize MQTT
-  final mqttService = MqttService();
-  await mqttService.initialize();
+  final prefs = await SharedPreferences.getInstance();
+  final userId = prefs.getInt('user_id') ?? 0;
+
+  if (userId != 0) {
+    final mqttService = MqttService();
+    await mqttService.initialize(userId);
+  }
 
   if (service is AndroidServiceInstance) {
     service.on('setAsForeground').listen((event) {
@@ -85,7 +76,6 @@ void onStart(ServiceInstance service) async {
     service.stopSelf();
   });
 
-  // Keep the service alive and verify connection periodically if needed
   Timer.periodic(const Duration(minutes: 1), (timer) async {
     if (service is AndroidServiceInstance) {
       if (!(await service.isForegroundService())) {
@@ -95,8 +85,6 @@ void onStart(ServiceInstance service) async {
         );
       }
     }
-
-    // Check MQTT connection here or send heartbeat
     print('Background service running...');
   });
 }
