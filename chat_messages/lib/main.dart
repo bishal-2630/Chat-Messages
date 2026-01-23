@@ -9,9 +9,14 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'constants.dart';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await initializeService();
+  
+  if (!kIsWeb) {
+    await initializeService();
+  }
 
   // Check if token exists
   final prefs = await SharedPreferences.getInstance();

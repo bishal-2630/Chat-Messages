@@ -30,8 +30,7 @@ $indexHtml = @"
   <link rel="manifest" href="{% static 'manifest.json' %}">
 </head>
 <body>
-  <div id="loading" style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif;">
-    <h2>Loading Chat App...</h2>
+  <div id="loading" style="display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f0f0f0;">
   </div>
   <script src="{% static 'flutter_bootstrap.js' %}" async></script>
 </body>
