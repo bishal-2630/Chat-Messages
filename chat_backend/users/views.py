@@ -1,5 +1,6 @@
 from rest_framework import generics
 from django.contrib.auth.models import User
+from .models import Message
 from .serializers import UserSerializer, UserListSerializer, MessageSerializer
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.db.models import Q
