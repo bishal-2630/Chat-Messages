@@ -26,7 +26,6 @@ class MqttService {
 
     final connMess = MqttConnectMessage()
         .withClientIdentifier(stableClientId)
-        .withCleanSession(false) // Persistent session
         .withWillTopic('willtopic')
         .withWillMessage('Disconnected')
         .withWillQos(MqttQos.atLeastOnce);
