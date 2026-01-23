@@ -8,18 +8,11 @@ flutter build web --release
 Write-Host "Copying files to Django backend..." -ForegroundColor Green
 Set-Location ..\chat_backend
 
-# Create directories if they don't exist
-New-Item -ItemType Directory -Path "static" -Force | Out-Null
-New-Item -ItemType Directory -Path "templates" -Force | Out-Null
-
 # Copy all static files
-Copy-Item -Path "..\chat_messages\build\web\*" -Destination ".\static\" -Recurse -Force
+Copy-Item -Path ..\chat_messages\build\web\* -Destination .\static\ -Recurse -Force
 
-# Copy index.html template
-Copy-Item -Path ".\templates\index.html" -Destination ".\templates\index.html.bak" -Force -ErrorAction SilentlyContinue
-
-# Create Django template version of index.html
-@"
+# Create Django-compatible index.html in templates
+$indexHtml = @"
 {% load static %}
 <!DOCTYPE html>
 <html>
@@ -43,7 +36,12 @@ Copy-Item -Path ".\templates\index.html" -Destination ".\templates\index.html.ba
   <script src="{% static 'flutter_bootstrap.js' %}" async></script>
 </body>
 </html>
-"@ | Out-File -FilePath ".\templates\index.html" -Encoding UTF8
+"@
+
+$indexHtml | Out-File -FilePath .\templates\index.html -Encoding UTF8
 
 Write-Host "Build complete! Ready to deploy." -ForegroundColor Green
-Write-Host "Run: vercel --prod" -ForegroundColor Yellow
+Write-Host "Next steps:" -ForegroundColor Yellow
+Write-Host "  1. git add ." -ForegroundColor Cyan
+Write-Host "  2. git commit -m 'Deploy: Update Flutter web build'" -ForegroundColor Cyan
+Write-Host "  3. git push origin main" -ForegroundColor Cyan
