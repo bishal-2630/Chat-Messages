@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../constants.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -18,7 +19,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _register() async {
   // Use 10.0.2.2 for Android Emulator, or your local IP (192.168.x.x) for physical devices
-  const String url = 'http://10.0.2.2:8000/api/register/';
+  const String url = '${ApiConstants.baseUrl}/register/';
 
   setState(() {
     _isLoading = true;

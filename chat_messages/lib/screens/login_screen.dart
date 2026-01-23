@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import '../constants.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -24,7 +25,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _login() async {
     // FIX: Use 10.0.2.2 for emulator and 8000 port
-    const String url = 'http://10.0.2.2:8000/api/login/'; 
+    const String url = '${ApiConstants.baseUrl}/login/'; 
 
     setState(() {
       _isLoading = true;

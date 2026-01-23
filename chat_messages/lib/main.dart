@@ -7,6 +7,7 @@ import 'screens/register_screen.dart';
 import 'screens/chat_screen.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'constants.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -71,7 +72,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://10.0.2.2:8000/api/users/'),
+        Uri.parse('${ApiConstants.baseUrl}/users/'),
         headers: {
           'Authorization': 'Token $token',
           'Content-Type': 'application/json',

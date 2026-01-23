@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/mqtt_service.dart';
+import '../constants.dart';
 
 class ChatScreen extends StatefulWidget {
   final int otherUserId;
@@ -41,7 +42,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (_token == null) return;
     try {
       final response = await http.get(
-        Uri.parse('http://10.0.2.2:8000/api/messages/?user_id=${widget.otherUserId}'),
+        Uri.parse('${ApiConstants.baseUrl}/messages/?user_id=${widget.otherUserId}'),
         headers: {
           'Authorization': 'Token $_token',
           'Content-Type': 'application/json',
@@ -87,7 +88,7 @@ class _ChatScreenState extends State<ChatScreen> {
     try {
       // 1. Save to Backend
       final response = await http.post(
-        Uri.parse('http://10.0.2.2:8000/api/messages/'),
+        Uri.parse('${ApiConstants.baseUrl}/messages/'),
         headers: {
           'Authorization': 'Token $_token',
           'Content-Type': 'application/json',
