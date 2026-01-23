@@ -95,7 +95,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Contacts')),
+      appBar: AppBar(title: const Text('Friends')),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : ListView.builder(
