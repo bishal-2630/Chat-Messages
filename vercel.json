@@ -1,0 +1,4 @@
+{
+    "buildCommand": "echo 'Using pre-built Flutter web files'",
+    "outputDirectory": "chat_backend/static"
+}
