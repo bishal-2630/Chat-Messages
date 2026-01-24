@@ -149,6 +149,13 @@ class _ChatScreenState extends State<ChatScreen> {
                   itemBuilder: (context, index) {
                     final msg = _messages[index];
                     final isMe = msg['sender'].toString() == _myId.toString();
+                    
+                    // DEBUG: Check why alignment might be wrong
+                    if (index == 0) { // Print only once per render to avoid spam
+                       print('DEBUG: My ID: $_myId'); 
+                       print('DEBUG: Msg Sender: ${msg['sender']} (isMe: $isMe)');
+                    }
+
                     return Align(
                       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
                       child: Container(
