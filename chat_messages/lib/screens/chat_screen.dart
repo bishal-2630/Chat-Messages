@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/mqtt_service.dart';
 import '../constants.dart';
@@ -22,15 +23,31 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isLoading = true;
   int? _myId;
   String? _token;
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
     _loadSessionInfo();
+    // Poll for new messages every 3 seconds
+    _timer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      if (!_isLoading) {
+        _fetchHistory();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _controller.dispose();
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadSessionInfo() async {
     final prefs = await SharedPreferences.getInstance();
+
     setState(() {
       _myId = prefs.getInt('user_id');
       _token = prefs.getString('auth_token');
@@ -50,15 +67,23 @@ class _ChatScreenState extends State<ChatScreen> {
       );
 
       if (response.statusCode == 200) {
-        setState(() {
-          _messages = jsonDecode(response.body);
-          _isLoading = false;
-        });
-        _scrollToBottom();
+        final newMessages = jsonDecode(response.body);
+        if (mounted) {
+           setState(() {
+            _isLoading = false;
+            // Only scroll if message count increased
+            if (newMessages.length > _messages.length) {
+              _messages = newMessages;
+              _scrollToBottom();
+            } else {
+              _messages = newMessages; // Update content anyway (e.g. read receipts)
+            }
+          });
+        }
       }
     } catch (e) {
       print('Error fetching history: $e');
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -123,19 +148,28 @@ class _ChatScreenState extends State<ChatScreen> {
                   itemCount: _messages.length,
                   itemBuilder: (context, index) {
                     final msg = _messages[index];
-                    final isMe = msg['sender'] == _myId;
+                    final isMe = msg['sender'].toString() == _myId.toString();
                     return Align(
                       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
                       child: Container(
+                        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
                         margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
                         decoration: BoxDecoration(
-                          color: isMe ? Colors.deepPurple : Colors.grey[300],
-                          borderRadius: BorderRadius.circular(12),
+                          color: isMe ? Colors.deepPurple : Colors.grey[200],
+                          borderRadius: BorderRadius.only(
+                            topLeft: const Radius.circular(16),
+                            topRight: const Radius.circular(16),
+                            bottomLeft: isMe ? const Radius.circular(16) : Radius.zero,
+                            bottomRight: isMe ? Radius.zero : const Radius.circular(16),
+                          ),
                         ),
                         child: Text(
                           msg['content'],
-                          style: TextStyle(color: isMe ? Colors.white : Colors.black),
+                          style: TextStyle(
+                            color: isMe ? Colors.white : Colors.black87,
+                            fontSize: 16,
+                          ),
                         ),
                       ),
                     );

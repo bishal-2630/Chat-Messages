@@ -17,10 +17,12 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isPasswordVisible = false;
   bool _isLoading = false;
 
-    // Function to save the token locally
-  Future<void> _saveToken(String token) async {
+  // Function to save the token and user info locally
+  Future<void> _saveSession(String token, int userId, String email) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('auth_token', token);
+    await prefs.setInt('user_id', userId);
+    await prefs.setString('email', email);
   }
 
   Future<void> _login() async {
@@ -34,8 +36,8 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final response = await http.post(
         Uri.parse(url),
-        headers: {'Content-Type': 'application/json'}, // FIX: Added headers
-        body: jsonEncode({ // FIX: Use jsonEncode
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
           'username': _usernameController.text.trim(),
           'password': _passwordController.text,
         }),
@@ -43,7 +45,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        await _saveToken(data['token']); // Save the token
+        // Save token and user info
+        await _saveSession(data['token'], data['user_id'], data['email']); 
+
         
         if (mounted) {
           Navigator.pushReplacementNamed(context, '/home');
