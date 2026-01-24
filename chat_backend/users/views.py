@@ -4,6 +4,7 @@ from .models import Message
 from .serializers import UserSerializer, UserListSerializer, MessageSerializer
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.db.models import Q
+from .mqtt import publish_message
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -35,5 +36,11 @@ class MessageListCreateView(generics.ListCreateAPIView):
         ).order_by('timestamp')
 
     def perform_create(self, serializer):
+        message = serializer.save(sender=self.request.user)
         
-        serializer.save(sender=self.request.user)
+        # Publish to MQTT for offline notifications
+        publish_message(message.receiver.id, {
+            'sender': message.sender.username,
+            'content': message.content,
+            'timestamp': str(message.timestamp)
+        })
