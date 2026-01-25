@@ -15,7 +15,14 @@ def publish_message(user_id, message_data):
     try:
         # Create a unique client ID for each push
         unique_id = f"{CLIENT_ID}_{uuid.uuid4().hex[:6]}"
-        client = mqtt.Client(unique_id)
+        
+        # FIX for paho-mqtt 2.0 compatibility
+        try:
+            # Try new version 2.0 constructor
+            client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1, unique_id)
+        except AttributeError:
+            # Fallback for older version 1.x
+            client = mqtt.Client(unique_id)
         
         print(f"[MQTT] Connecting to {BROKER}...")
         client.connect(BROKER, PORT, 60)
