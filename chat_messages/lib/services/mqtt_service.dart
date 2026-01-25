@@ -21,7 +21,27 @@ class MqttService {
 
   Future<void> initialize(int userId, [ServiceInstance? service]) async {
     _currentUserId = userId;
-    _backgroundService = service; 
+    _backgroundService = service;
+    client.updates?.listen((List<MqttReceivedMessage<MqttMessage?>>? c) {
+        final recMess = c![0].payload as MqttPublishMessage;
+        final payload = MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
+        print('MQTT: --> RAW DATA RECEIVED: $payload');
+        
+        try {
+          final Map<String, dynamic> data = jsonDecode(payload);
+          final String sender = data['sender'] ?? "New Message";
+          final String content = data['content'] ?? "";
+          _backgroundService?.invoke('onMessage', data);
+          
+          // Push to stream for UI updates
+          _messageStreamController.add(data);
+          
+          NotificationService.showNotification(sender, content);
+        } catch (e) {
+          print('MQTT: Error parsing payload - $e');
+          NotificationService.showNotification("New Message", payload);
+        }
+      }); 
     // Use a more unique client ID to avoid conflicts
     final String uniqueId = DateTime.now().millisecondsSinceEpoch.toString().substring(7);
     final String stableClientId = 'user_chat_${userId}_$uniqueId';
@@ -61,26 +81,7 @@ class MqttService {
 
    void onConnected() {
     print('MQTT: Connected successfully');
-    client.updates?.listen((List<MqttReceivedMessage<MqttMessage?>>? c) {
-        final recMess = c![0].payload as MqttPublishMessage;
-        final payload = MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
-        print('MQTT: --> RAW DATA RECEIVED: $payload');
-        
-        try {
-          final Map<String, dynamic> data = jsonDecode(payload);
-          final String sender = data['sender'] ?? "New Message";
-          final String content = data['content'] ?? "";
-          _backgroundService?.invoke('onMessage', data);
-          
-          // Push to stream for UI updates
-          _messageStreamController.add(data);
-          
-          NotificationService.showNotification(sender, content);
-        } catch (e) {
-          print('MQTT: Error parsing payload - $e');
-          NotificationService.showNotification("New Message", payload);
-        }
-      });
+    
     if (_currentUserId != null) {
       final String userTopic = 'bishal_chat/user/$_currentUserId';
       print('MQTT: Attempting to subscribe to $userTopic');
