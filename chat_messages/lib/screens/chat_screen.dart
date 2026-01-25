@@ -35,7 +35,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _mqttSubscription = FlutterBackgroundService().on('onMessage').listen((data) {
       if (mounted && data != null) {
         final senderId = data['sender_id'];
-        if (senderId != null && senderId == widget.otherUserId) {
+        if (senderId != null && senderId.toString() == widget.otherUserId.toString()) {
           setState(() {
             _messages.add({
               'sender': senderId,
