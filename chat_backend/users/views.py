@@ -53,6 +53,9 @@ class MessageListCreateView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         message = serializer.save(sender=self.request.user)
+
+        message.is_delivered = True
+        message.save()
         
         # Publish to MQTT for offline notifications
         publish_message(message.receiver.id, {

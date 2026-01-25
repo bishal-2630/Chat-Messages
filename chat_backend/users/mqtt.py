@@ -23,7 +23,7 @@ def publish_message(user_id, message_data):
             # Start the loop to handle network events
             client.loop_start()
             
-            topic = f'chat/user/{user_id}'
+            topic = f'bishal_chat/user/{user_id}'
             payload = json.dumps(message_data)
             
             # Use QoS 1 for more reliable delivery

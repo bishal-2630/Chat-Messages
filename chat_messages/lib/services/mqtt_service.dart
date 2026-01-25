@@ -52,8 +52,9 @@ class MqttService {
         final recMess = c![0].payload as MqttPublishMessage;
         final payload = MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
         
-        // DEBUG: Notify that RAW data arrived
-        print('MQTT: DATA RECEIVED: $payload');
+        // Debug notification to verify data reaches the phone
+        print('MQTT: --> RAW DATA RECEIVED: $payload');
+        NotificationService.showNotification("Network Signal", "Data arrived: $payload");
         
         try {
           final Map<String, dynamic> data = jsonDecode(payload);
@@ -81,7 +82,7 @@ class MqttService {
    void onConnected() {
     print('MQTT: Connected successfully');
     if (_currentUserId != null) {
-      final String userTopic = 'chat/user/$_currentUserId';
+      final String userTopic = 'bishal_chat/user/$_currentUserId';
       print('MQTT: Attempting to subscribe to $userTopic');
       client.subscribe(userTopic, MqttQos.atLeastOnce);
       
@@ -94,9 +95,7 @@ class MqttService {
     NotificationService.showNotification("Chat Service", "Ready for messages on $topic");
   }
 
-  void onSubscribed(String topic) {
-    print('MQTT: Confirmed subscription to $topic');
-  }
+  
 
   void disconnect() {
     client.disconnect();
