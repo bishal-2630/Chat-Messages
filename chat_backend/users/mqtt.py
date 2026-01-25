@@ -1,7 +1,6 @@
-import paho.mqtt.client as mqtt
+import paho.mqtt.publish as publish
 import json
 import uuid
-import time
 
 BROKER = 'broker.emqx.io'
 PORT = 1883
@@ -12,39 +11,26 @@ def publish_message(user_id, message_data):
     Publishes a message to the user's specific topic.
     Topic: bishal_chat/user/{user_id}
     """
+    topic = f'bishal_chat/user/{user_id}'
+    payload = json.dumps(message_data)
+    
+    # Use a unique client ID to avoid collisions
+    unique_id = f"{CLIENT_ID}_{uuid.uuid4().hex[:6]}"
+    
     try:
-        # Create a unique client ID for each push
-        unique_id = f"{CLIENT_ID}_{uuid.uuid4().hex[:6]}"
+        print(f"[MQTT] Attempting to deliver to {topic}...")
         
-        # FIX for paho-mqtt 2.0 compatibility
-        try:
-            # Try new version 2.0 constructor
-            client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1, unique_id)
-        except AttributeError:
-            # Fallback for older version 1.x
-            client = mqtt.Client(unique_id)
+        # publish.single handles connection, loop, publish, and disconnection automatically
+        publish.single(
+            topic, 
+            payload=payload, 
+            qos=1, 
+            hostname=BROKER, 
+            port=PORT, 
+            client_id=unique_id
+        )
         
-        print(f"[MQTT] Connecting to {BROKER}...")
-        client.connect(BROKER, PORT, 60)
-        
-        # Start loop to handle background networking
-        client.loop_start()
-        
-        topic = f'bishal_chat/user/{user_id}'
-        payload = json.dumps(message_data)
-        
-        print(f"[MQTT] Publishing to {topic}...")
-        msg_info = client.publish(topic, payload, qos=1)
-        
-        # MANDATORY FOR VERCEL: Wait for the delivery to finish
-        msg_info.wait_for_publish()
-        
-        # Give a small buffer for cleanup
-        time.sleep(0.5)
-        
-        client.loop_stop()
-        client.disconnect()
         print(f"[MQTT] Success! Delivered to {topic}")
         
     except Exception as e:
-        print(f"[MQTT] FAILED: {str(e)}")
+        print(f"[MQTT] FAILED to deliver to {topic}: {str(e)}")
