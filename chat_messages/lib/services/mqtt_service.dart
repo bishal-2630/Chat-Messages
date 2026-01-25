@@ -22,26 +22,6 @@ class MqttService {
   Future<void> initialize(int userId, [ServiceInstance? service]) async {
     _currentUserId = userId;
     _backgroundService = service;
-    client.updates?.listen((List<MqttReceivedMessage<MqttMessage?>>? c) {
-        final recMess = c![0].payload as MqttPublishMessage;
-        final payload = MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
-        print('MQTT: --> RAW DATA RECEIVED: $payload');
-        
-        try {
-          final Map<String, dynamic> data = jsonDecode(payload);
-          final String sender = data['sender'] ?? "New Message";
-          final String content = data['content'] ?? "";
-          _backgroundService?.invoke('onMessage', data);
-          
-          // Push to stream for UI updates
-          _messageStreamController.add(data);
-          
-          NotificationService.showNotification(sender, content);
-        } catch (e) {
-          print('MQTT: Error parsing payload - $e');
-          NotificationService.showNotification("New Message", payload);
-        }
-      }); 
     // Use a more unique client ID to avoid conflicts
     final String uniqueId = DateTime.now().millisecondsSinceEpoch.toString().substring(7);
     final String stableClientId = 'user_chat_${userId}_$uniqueId';
@@ -66,6 +46,29 @@ class MqttService {
         .startClean() // Important for fresh starts
         .withWillQos(MqttQos.atLeastOnce);
     client.connectionMessage = connMess;
+
+    // Attach listener to the newly created client
+    client.updates?.listen((List<MqttReceivedMessage<MqttMessage?>>? c) {
+        if (c == null) return;
+        final recMess = c[0].payload as MqttPublishMessage;
+        final payload = MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
+        print('MQTT: --> RAW DATA RECEIVED: $payload');
+        
+        try {
+          final Map<String, dynamic> data = jsonDecode(payload);
+          final String sender = data['sender'] ?? "New Message";
+          final String content = data['content'] ?? "";
+          _backgroundService?.invoke('onMessage', data);
+          
+          // Push to stream for UI updates
+          _messageStreamController.add(data);
+          
+          NotificationService.showNotification(sender, content);
+        } catch (e) {
+          print('MQTT: Error parsing payload - $e');
+          NotificationService.showNotification("New Message", payload);
+        }
+    }); 
 
     try {
       print('MQTT: Connecting to $broker...');
