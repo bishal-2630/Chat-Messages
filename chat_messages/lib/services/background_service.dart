@@ -22,6 +22,7 @@ Future<void> initializeService() async {
     'Chat Messages',
     description: 'Notifications for new chat messages',
     importance: Importance.max,
+    lockscreenVisibility: NotificationVisibility.public,
   );
 
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =

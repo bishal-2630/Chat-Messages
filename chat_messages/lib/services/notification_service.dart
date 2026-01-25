@@ -22,6 +22,10 @@ class NotificationService {
       channelDescription: 'Notifications from MQTT',
       importance: Importance.max,
       priority: Priority.high,
+      ticker: 'ticker',
+      fullScreenIntent: true,
+      category: AndroidNotificationCategory.message,
+      visibility: NotificationVisibility.public,
     );
     const NotificationDetails platformChannelSpecifics =
         NotificationDetails(android: androidPlatformChannelSpecifics);
