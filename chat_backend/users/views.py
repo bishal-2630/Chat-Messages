@@ -56,6 +56,7 @@ class MessageListCreateView(generics.ListCreateAPIView):
         
         # Publish to MQTT for offline notifications
         publish_message(message.receiver.id, {
+            'sender_id': message.sender.id,
             'sender': message.sender.username,
             'content': message.content,
             'timestamp': str(message.timestamp)
