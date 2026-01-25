@@ -41,7 +41,7 @@ class MqttService {
         .withClientIdentifier(stableClientId)
         .withWillTopic('willtopic')
         .withWillMessage('Disconnected unexpectedly')
-        .withCleanSession() // Important for fresh starts
+        .startClean() // Important for fresh starts
         .withWillQos(MqttQos.atLeastOnce);
     client.connectionMessage = connMess;
 
