@@ -17,14 +17,22 @@ Future<void> initializeService() async {
     importance: Importance.low,
   );
 
+  const AndroidNotificationChannel chatChannel = AndroidNotificationChannel(
+    'mqtt_channel_id',
+    'Chat Messages',
+    description: 'Notifications for new chat messages',
+    importance: Importance.max,
+  );
+
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
-  await flutterLocalNotificationsPlugin
+  final androidPlugin = flutterLocalNotificationsPlugin
       .resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin
-      >()
-      ?.createNotificationChannel(channel);
+          AndroidFlutterLocalNotificationsPlugin>();
+
+  await androidPlugin?.createNotificationChannel(channel);
+  await androidPlugin?.createNotificationChannel(chatChannel);
 
   await service.configure(
     androidConfiguration: AndroidConfiguration(

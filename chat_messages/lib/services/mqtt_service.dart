@@ -13,7 +13,12 @@ class MqttService {
 
   Future<void> initialize(int userId) async {
     _currentUserId = userId; // Store the ID
-    final String stableClientId = 'user_chat_$userId';
+    // Use a more unique client ID to avoid conflicts
+    final String uniqueId = DateTime.now().millisecondsSinceEpoch.toString().substring(7);
+    final String stableClientId = 'user_chat_${userId}_$uniqueId';
+    
+    print('MQTT: Initializing for user $userId with CID $stableClientId');
+    
     client = MqttServerClient(broker, stableClientId);
     client.port = port;
     client.logging(on: true);
@@ -28,12 +33,13 @@ class MqttService {
     final connMess = MqttConnectMessage()
         .withClientIdentifier(stableClientId)
         .withWillTopic('willtopic')
-        .withWillMessage('Disconnected')
+        .withWillMessage('Disconnected unexpectedly')
+        .startClean() // Important for fresh starts
         .withWillQos(MqttQos.atLeastOnce);
     client.connectionMessage = connMess;
 
     try {
-      print('MQTT: Connecting for user $userId...');
+      print('MQTT: Connecting to $broker...');
       await client.connect();
     } catch (e) {
       print('MQTT: Connection failed - $e');
@@ -42,12 +48,18 @@ class MqttService {
   }
 
   void onConnected() {
-    print('MQTT: Connected');
+    print('MQTT: Connected successfully');
     if (_currentUserId != null) {
-      client.subscribe('chat/user/$_currentUserId', MqttQos.atLeastOnce);
+      final String userTopic = 'chat/user/$_currentUserId';
+      print('MQTT: Subscribing to $userTopic');
+      client.subscribe(userTopic, MqttQos.atLeastOnce);
+      
+      // Notify for debugging
+      NotificationService.showNotification("Chat Service", "Connected for user $_currentUserId");
     }
 
-    client.updates!.listen((List<MqttReceivedMessage<MqttMessage?>>? c) {
+    // Set up the listener ONLY ONCE per client instance
+    client.updates?.listen((List<MqttReceivedMessage<MqttMessage?>>? c) {
       final recMess = c![0].payload as MqttPublishMessage;
       final payload = MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
       

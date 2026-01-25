@@ -13,15 +13,19 @@ def publish_message(user_id, message_data):
     """
     def _publish():
         try:
-            client = mqtt.Client(CLIENT_ID)
+            # Use a unique client ID for each push to avoid collisions
+            import uuid
+            unique_id = f"{CLIENT_ID}_{uuid.uuid4().hex[:6]}"
+            client = mqtt.Client(unique_id)
             client.connect(BROKER, PORT, 60)
             
             topic = f'chat/user/{user_id}'
             payload = json.dumps(message_data)
             
-            client.publish(topic, payload)
+            # Use QoS 1 for more reliable delivery
+            client.publish(topic, payload, qos=1)
             client.disconnect()
-            print(f"MQTT: Published to {topic}")
+            print(f"MQTT: Published to {topic} with CID {unique_id}")
         except Exception as e:
             print(f"MQTT Error: {e}")
 
