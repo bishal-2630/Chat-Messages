@@ -23,23 +23,35 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isLoading = true;
   int? _myId;
   String? _token;
-  Timer? _timer;
+  StreamSubscription? _mqttSubscription;
 
   @override
   void initState() {
     super.initState();
     _loadSessionInfo();
-    // Poll for new messages every 3 seconds
-    _timer = Timer.periodic(const Duration(seconds: 3), (timer) {
-      if (!_isLoading) {
-        _fetchHistory();
+    
+    // Listen for real-time messages via MQTT
+    _mqttSubscription = MqttService.messageStream.listen((data) {
+      if (mounted) {
+        // Only add message if it's from the person we are chatting with
+        final senderId = data['sender_id']; // We'll need to add this to backend payload
+        if (senderId != null && senderId == widget.otherUserId) {
+           setState(() {
+            _messages.add({
+              'sender': senderId,
+              'content': data['content'],
+              'timestamp': DateTime.now().toIso8601String(),
+            });
+            _scrollToBottom();
+          });
+        }
       }
     });
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
+    _mqttSubscription?.cancel();
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();

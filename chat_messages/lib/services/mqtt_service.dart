@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 import 'dart:convert';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
@@ -10,6 +11,11 @@ class MqttService {
   final int port = 1883;
   int? _currentUserId; // Store ID for use across methods
   final String topic = 'test/topic';
+
+  // For real-time UI updates
+  static final StreamController<Map<String, dynamic>> _messageStreamController = 
+      StreamController<Map<String, dynamic>>.broadcast();
+  static Stream<Map<String, dynamic>> get messageStream => _messageStreamController.stream;
 
   Future<void> initialize(int userId) async {
     _currentUserId = userId; // Store the ID
@@ -40,6 +46,27 @@ class MqttService {
 
     try {
       print('MQTT: Connecting to $broker...');
+      // IMPORTANT: Set up the listener BEFORE connecting to ensure we don't miss any messages
+      client.updates?.listen((List<MqttReceivedMessage<MqttMessage?>>? c) {
+        final recMess = c![0].payload as MqttPublishMessage;
+        final payload = MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
+        print('MQTT: Received message on topic ${c[0].topic}: $payload');
+        
+        try {
+          final Map<String, dynamic> data = jsonDecode(payload);
+          final String sender = data['sender'] ?? "New Message";
+          final String content = data['content'] ?? "";
+          
+          // Push to stream for UI updates
+          _messageStreamController.add(data);
+          
+          NotificationService.showNotification(sender, content);
+        } catch (e) {
+          print('MQTT: Error parsing payload - $e');
+          NotificationService.showNotification("New Message", payload);
+        }
+      });
+
       await client.connect();
     } catch (e) {
       print('MQTT: Connection failed - $e');
@@ -57,22 +84,10 @@ class MqttService {
       // Notify for debugging
       NotificationService.showNotification("Chat Service", "Connected for user $_currentUserId");
     }
+  }
 
-    // Set up the listener ONLY ONCE per client instance
-    client.updates?.listen((List<MqttReceivedMessage<MqttMessage?>>? c) {
-      final recMess = c![0].payload as MqttPublishMessage;
-      final payload = MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
-      
-      try {
-        final Map<String, dynamic> data = jsonDecode(payload);
-        final String sender = data['sender'] ?? "New Message";
-        final String content = data['content'] ?? "";
-        NotificationService.showNotification(sender, content);
-      } catch (e) {
-        print('MQTT: Error parsing payload - $e');
-        NotificationService.showNotification("New Message", payload);
-      }
-    });
+  void onSubscribed(String topic) {
+    print('MQTT: Confirmed subscription to $topic');
   }
 
   void disconnect() {
@@ -81,5 +96,4 @@ class MqttService {
   }
 
   void onDisconnected() => print('MQTT: Disconnected');
-  void onSubscribed(String topic) => print('MQTT: Subscribed to $topic');
 }
