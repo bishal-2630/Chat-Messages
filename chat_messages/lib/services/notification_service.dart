@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class NotificationService {
@@ -15,7 +16,7 @@ class NotificationService {
   }
 
   static Future<void> showNotification(String title, String body) async {
-    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+    final AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
       'chat_messages_v3',
       'Chat Messages',
@@ -23,13 +24,12 @@ class NotificationService {
       importance: Importance.max,
       priority: Priority.max,
       ticker: 'ticker',
-      fullScreenIntent: true,
       category: AndroidNotificationCategory.message,
       visibility: NotificationVisibility.public,
       enableVibration: true,
-      vibrationPattern: [0, 500, 200, 500],
+      playSound: true,
     );
-    const NotificationDetails platformChannelSpecifics =
+    final NotificationDetails platformChannelSpecifics =
         NotificationDetails(android: androidPlatformChannelSpecifics);
     
     // Unique ID based on timestamp to avoid overwriting previous notifications
