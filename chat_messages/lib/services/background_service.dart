@@ -19,7 +19,7 @@ Future<void> initializeService() async {
   );
 
   const AndroidNotificationChannel chatChannel = AndroidNotificationChannel(
-    'mqtt_channel_id',
+    'chat_messages_v2',
     'Chat Messages',
     description: 'Notifications for new chat messages',
     importance: Importance.max,

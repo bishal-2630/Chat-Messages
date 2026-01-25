@@ -17,11 +17,11 @@ class NotificationService {
   static Future<void> showNotification(String title, String body) async {
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
-      'mqtt_channel_id',
-      'MQTT Notifications',
-      channelDescription: 'Notifications from MQTT',
+      'chat_messages_v2',
+      'Chat Messages',
+      channelDescription: 'Notifications from Chat App',
       importance: Importance.max,
-      priority: Priority.high,
+      priority: Priority.max,
       ticker: 'ticker',
       fullScreenIntent: true,
       category: AndroidNotificationCategory.message,
