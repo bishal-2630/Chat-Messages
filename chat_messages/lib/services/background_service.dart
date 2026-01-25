@@ -12,16 +12,16 @@ Future<void> initializeService() async {
   final service = FlutterBackgroundService();
 
   const AndroidNotificationChannel channel = AndroidNotificationChannel(
-    'my_foreground', 
-    'MY FOREGROUND SERVICE',
-    description: 'This channel is used for important notifications.',
-    importance: Importance.low,
+    'my_foreground_v3', 
+    'System Service',
+    description: 'Maintains the background chat connection.',
+    importance: Importance.max,
   );
 
   const AndroidNotificationChannel chatChannel = AndroidNotificationChannel(
-    'chat_messages_v2',
+    'chat_messages_v3',
     'Chat Messages',
-    description: 'Notifications for new chat messages',
+    description: 'High priority notifications for new chat messages',
     importance: Importance.max,
   );
 
@@ -40,9 +40,9 @@ Future<void> initializeService() async {
       onStart: onStart,
       autoStart: true,
       isForegroundMode: true,
-      notificationChannelId: 'my_foreground',
-      initialNotificationTitle: 'AWESOME SERVICE',
-      initialNotificationContent: 'Initializing',
+      notificationChannelId: 'my_foreground_v3',
+      initialNotificationTitle: 'Chat Service Active',
+      initialNotificationContent: 'Monitoring for incoming messages',
       foregroundServiceNotificationId: 888,
     ),
     iosConfiguration: IosConfiguration(
