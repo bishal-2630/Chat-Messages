@@ -25,8 +25,12 @@ class NotificationService {
     );
     const NotificationDetails platformChannelSpecifics =
         NotificationDetails(android: androidPlatformChannelSpecifics);
+    
+    // Unique ID based on timestamp to avoid overwriting previous notifications
+    int id = DateTime.now().millisecondsSinceEpoch.remainder(100000);
+    
     await _notificationsPlugin.show(
-      0,
+      id,
       title,
       body,
       platformChannelSpecifics,

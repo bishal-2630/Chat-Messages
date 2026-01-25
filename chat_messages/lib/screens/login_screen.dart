@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
 import 'dart:convert';
 import '../constants.dart';
 
@@ -48,6 +49,8 @@ class _LoginScreenState extends State<LoginScreen> {
         // Save token and user info
         await _saveSession(data['token'], data['user_id'], data['email']); 
 
+        // Trigger background service to refresh MQTT connection
+        FlutterBackgroundService().invoke("refresh");
         
         if (mounted) {
           Navigator.pushReplacementNamed(context, '/home');

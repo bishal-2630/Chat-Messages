@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 import 'notification_service.dart';
@@ -49,8 +50,22 @@ class MqttService {
     client.updates!.listen((List<MqttReceivedMessage<MqttMessage?>>? c) {
       final recMess = c![0].payload as MqttPublishMessage;
       final payload = MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
-      NotificationService.showNotification("New Message", payload);
+      
+      try {
+        final Map<String, dynamic> data = jsonDecode(payload);
+        final String sender = data['sender'] ?? "New Message";
+        final String content = data['content'] ?? "";
+        NotificationService.showNotification(sender, content);
+      } catch (e) {
+        print('MQTT: Error parsing payload - $e');
+        NotificationService.showNotification("New Message", payload);
+      }
     });
+  }
+
+  void disconnect() {
+    client.disconnect();
+    print('MQTT: Disconnected manually');
   }
 
   void onDisconnected() => print('MQTT: Disconnected');

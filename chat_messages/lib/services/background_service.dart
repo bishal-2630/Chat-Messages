@@ -54,13 +54,21 @@ void onStart(ServiceInstance service) async {
   DartPluginRegistrant.ensureInitialized();
   await NotificationService.initialize();
 
-  final prefs = await SharedPreferences.getInstance();
-  final userId = prefs.getInt('user_id') ?? 0;
+  MqttService? mqttService;
 
-  if (userId != 0) {
-    final mqttService = MqttService();
-    await mqttService.initialize(userId);
+  Future<void> startMqtt() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getInt('user_id') ?? 0;
+    print('Background: Starting MQTT for user $userId');
+
+    if (userId != 0) {
+      mqttService?.disconnect(); // Disconnect existing if any
+      mqttService = MqttService();
+      await mqttService!.initialize(userId);
+    }
   }
+
+  await startMqtt();
 
   if (service is AndroidServiceInstance) {
     service.on('setAsForeground').listen((event) {
@@ -69,6 +77,11 @@ void onStart(ServiceInstance service) async {
 
     service.on('setAsBackground').listen((event) {
       service.setAsBackgroundService();
+    });
+
+    service.on('refresh').listen((event) async {
+       print('Background: Refreshing MQTT connection...');
+       await startMqtt();
     });
   }
 
