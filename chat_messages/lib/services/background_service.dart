@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import 'mqtt_service.dart';
 import 'notification_service.dart';
 import 'package:flutter_background_service_android/flutter_background_service_android.dart';
@@ -59,6 +60,7 @@ Future<bool> onIosBackground(ServiceInstance service) async {
 
 @pragma('vm:entry-point')
 void onStart(ServiceInstance service) async {
+  WakelockPlus.enable();
   DartPluginRegistrant.ensureInitialized();
   await NotificationService.initialize();
 
