@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
 import 'notification_service.dart';
 
 class MqttService {
@@ -17,7 +18,7 @@ class MqttService {
       StreamController<Map<String, dynamic>>.broadcast();
   static Stream<Map<String, dynamic>> get messageStream => _messageStreamController.stream;
 
-  Future<void> initialize(int userId) async {
+  Future<void> initialize(int userId, [ServiceInstance? service]) async {
     _currentUserId = userId; // Store the ID
     // Use a more unique client ID to avoid conflicts
     final String uniqueId = DateTime.now().millisecondsSinceEpoch.toString().substring(7);
@@ -40,7 +41,7 @@ class MqttService {
         .withClientIdentifier(stableClientId)
         .withWillTopic('willtopic')
         .withWillMessage('Disconnected unexpectedly')
-        .startClean() // Important for fresh starts
+        .withCleanSession() // Important for fresh starts
         .withWillQos(MqttQos.atLeastOnce);
     client.connectionMessage = connMess;
 
@@ -56,6 +57,7 @@ class MqttService {
           final Map<String, dynamic> data = jsonDecode(payload);
           final String sender = data['sender'] ?? "New Message";
           final String content = data['content'] ?? "";
+          service?.invoke('onMessage', data);
           
           // Push to stream for UI updates
           _messageStreamController.add(data);

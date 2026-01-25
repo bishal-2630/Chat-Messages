@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
 import '../services/mqtt_service.dart';
 import '../constants.dart';
 
@@ -31,12 +32,11 @@ class _ChatScreenState extends State<ChatScreen> {
     _loadSessionInfo();
     
     // Listen for real-time messages via MQTT
-    _mqttSubscription = MqttService.messageStream.listen((data) {
-      if (mounted) {
-        // Only add message if it's from the person we are chatting with
-        final senderId = data['sender_id']; // We'll need to add this to backend payload
+    _mqttSubscription = FlutterBackgroundService().on('onMessage').listen((data) {
+      if (mounted && data != null) {
+        final senderId = data['sender_id'];
         if (senderId != null && senderId == widget.otherUserId) {
-           setState(() {
+          setState(() {
             _messages.add({
               'sender': senderId,
               'content': data['content'],

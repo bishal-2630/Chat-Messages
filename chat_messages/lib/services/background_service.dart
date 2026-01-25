@@ -72,7 +72,7 @@ void onStart(ServiceInstance service) async {
     if (userId != 0) {
       mqttService?.disconnect(); // Disconnect existing if any
       mqttService = MqttService();
-      await mqttService!.initialize(userId);
+      await mqttService!.initialize(userId,service);
     }
   }
 
