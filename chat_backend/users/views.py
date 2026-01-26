@@ -114,3 +114,33 @@ class MarkMessageReadView(generics.UpdateAPIView):
             return Response({'status': 'read'})
         return Response({'status': 'error'}, status=403)
 
+class DebugStateView(APIView):
+    permission_classes = (AllowAny,)
+
+    def get(self, request):
+        status = {
+            'database': 'unknown',
+            'tables': {},
+            'debug_mode': False,
+        }
+        
+        from django.conf import settings
+        status['debug_mode'] = settings.DEBUG
+        
+        try:
+            db_engine = settings.DATABASES['default']['ENGINE']
+            status['database'] = f"Using {db_engine}"
+            
+            # Check for tables
+            table_names = connection.introspection.table_names()
+            status['tables'] = {
+                'auth_user': 'auth_user' in table_names,
+                'users_profile': 'users_profile' in table_names,
+                'users_message': 'users_message' in table_names,
+            }
+            status['all_tables'] = table_names[:20] # Show first 20 for reference
+            
+        except Exception as e:
+            status['error'] = str(e)
+            
+        return Response(status)
