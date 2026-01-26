@@ -60,7 +60,7 @@ class _ChatScreenState extends State<ChatScreen> {
         } else if (type == 'message_deleted') {
           final deletedId = data['message_id'];
           setState(() {
-            _messages.removeWhere((m) => m['id'] == deletedId);
+            _messages.removeWhere((m) => m['id'].toString() == deletedId.toString());
           });
         } else if (type == 'message_read') {
           final readId = data['message_id'];

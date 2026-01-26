@@ -6,25 +6,29 @@ class NotificationService {
       FlutterLocalNotificationsPlugin();
 
   static Future<void> initialize() async {
+    print('NotificationService: Starting initialization...');
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
 
     const InitializationSettings initializationSettings =
         InitializationSettings(android: initializationSettingsAndroid);
 
-    await _notificationsPlugin.initialize(initializationSettings);
-    
-    // Explicitly request permissions for Android 13+
-    final androidPlugin = _notificationsPlugin
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
-    await androidPlugin?.requestNotificationsPermission();
-    print('NotificationService: Initialized and permissions requested');
+    try {
+      await _notificationsPlugin.initialize(initializationSettings);
+      
+      final androidPlugin = _notificationsPlugin
+          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+      await androidPlugin?.requestNotificationsPermission();
+      print('NotificationService: Initialization COMPLETE, permissions requested');
+    } catch (e) {
+      print('NotificationService: CRITICAL INITIALIZATION ERROR: $e');
+    }
   }
 
   static Future<void> showNotification(String title, String body) async {
     final AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
-      'chat_messages_v3',
+      'chat_messages_v5',
       'Chat Messages',
       channelDescription: 'New message alerts',
       importance: Importance.max,
@@ -39,12 +43,17 @@ class NotificationService {
     // Unique ID based on timestamp to avoid overwriting previous notifications
     int id = DateTime.now().millisecondsSinceEpoch.remainder(100000);
     
-    print('NotificationService: Displaying alert - $title: $body');
-    await _notificationsPlugin.show(
-      id,
-      title,
-      body,
-      platformChannelSpecifics,
-    );
+    print('NotificationService: ATTEMPTING to show notification: id=$id, title=$title');
+    try {
+      await _notificationsPlugin.show(
+        id,
+        title,
+        body,
+        platformChannelSpecifics,
+      );
+      print('NotificationService: PLUGIN.SHOW() call completed successfully');
+    } catch (e) {
+      print('NotificationService: PLUGIN.SHOW() FAILED: $e');
+    }
   }
 }

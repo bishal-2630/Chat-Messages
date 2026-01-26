@@ -46,7 +46,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        await _saveSession(data['token'], data['user_id'], data['email'], data['username'] ?? _usernameController.text.trim()); 
+        final int userId = int.tryParse(data['user_id'].toString()) ?? 0;
+        await _saveSession(data['token'], userId, data['email'], data['username'] ?? _usernameController.text.trim()); 
 
         FlutterBackgroundService().invoke("refresh");
         

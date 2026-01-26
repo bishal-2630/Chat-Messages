@@ -12,16 +12,16 @@ Future<void> initializeService() async {
   final service = FlutterBackgroundService();
 
   const AndroidNotificationChannel channel = AndroidNotificationChannel(
-    'System Connectivity', 
+    'System Connectivity v5', 
     'System Connectivity',
     description: 'Maintains background system connectivity.',
-    importance: Importance.low, // Keep it silent but alive
+    importance: Importance.low, 
   );
 
   const AndroidNotificationChannel chatChannel = AndroidNotificationChannel(
-    'chat_messages_v3',
-    'Chat Messages',
-    description: 'High priority notifications for new chat messages',
+    'chat_messages_v5',
+    'Chat Channel',
+    description: 'New chat message notifications',
     importance: Importance.max,
   );
 
@@ -40,7 +40,7 @@ Future<void> initializeService() async {
       onStart: onStart,
       autoStart: true,
       isForegroundMode: true,
-      notificationChannelId: 'my_foreground_v3',
+      notificationChannelId: 'System Connectivity v5',
       initialNotificationTitle: 'System Sync',
       initialNotificationContent: 'Active',
       foregroundServiceNotificationId: 888,
@@ -60,6 +60,7 @@ Future<bool> onIosBackground(ServiceInstance service) async {
 
 @pragma('vm:entry-point')
 void onStart(ServiceInstance service) async {
+  print('Background service: [onStart] triggered');
   WakelockPlus.enable();
   DartPluginRegistrant.ensureInitialized();
   try {

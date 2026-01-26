@@ -1,6 +1,9 @@
 import sys
 import json
-from users.mqtt import publish_message
+import paho.mqtt.publish as publish
+
+BROKER = 'broker.hivemq.com'
+PORT = 1883
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
@@ -8,12 +11,25 @@ if __name__ == "__main__":
         sys.exit(1)
     
     user_id = sys.argv[1]
+    topic = f'bishal_chat/user/{user_id}'
+    
     data = {
+        'type': 'new_message',
         'sender': 'System Test',
         'content': 'This is a test notification from Vercel!',
         'timestamp': 'now'
     }
     
-    print(f"Triggering manual notification for User {user_id}...")
-    publish_message(user_id, data)
-    print("Done. Check the logs and your phone.")
+    print(f"Triggering SYNC notification for User {user_id} on {topic}...")
+    try:
+        publish.single(
+            topic, 
+            payload=json.dumps(data), 
+            hostname=BROKER, 
+            port=PORT,
+            qos=1
+        )
+        print("[MQTT] SUCCESS! Message delivered to broker.")
+        print("Done. Check the logs and your phone.")
+    except Exception as e:
+        print(f"[MQTT] FAILED: {str(e)}")
