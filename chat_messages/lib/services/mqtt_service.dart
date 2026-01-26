@@ -13,6 +13,7 @@ class MqttService {
   int? _currentUserId; 
   final String topic = 'test/topic';
   ServiceInstance? _backgroundService;
+  bool _isListenerAttached = false;
  
   // For real-time UI updates
   static final StreamController<Map<String, dynamic>> _messageStreamController = 
@@ -25,6 +26,7 @@ class MqttService {
   Future<void> initialize(int userId, [ServiceInstance? service]) async {
     _currentUserId = userId;
     _backgroundService = service;
+    _isListenerAttached = false; // Reset on re-init
     // USE TRULY STABLE ID for session persistence
     final String stableClientId = 'bishal_user_client_$userId';
     
@@ -45,7 +47,7 @@ class MqttService {
     final connMess = MqttConnectMessage()
         .withClientIdentifier(stableClientId)
         .withWillQos(MqttQos.atMostOnce);
-    // REMOVED startClean() to allow broker persistence
+    
     client.connectionMessage = connMess;
 
     print('MQTT: Initialization result - User: $userId, CID: $stableClientId');
@@ -73,6 +75,11 @@ class MqttService {
   }
 
   void _setupUpdateListener(Stream<List<MqttReceivedMessage<MqttMessage?>>> updates) {
+    if (_isListenerAttached) {
+      print('MQTT: Listener already attached, skipping.');
+      return;
+    }
+    _isListenerAttached = true;
     print('MQTT: Setting up Update Listener...'); 
     // REMOVED TYPE ANNOTATION to avoid potential runtime cast errors
     updates.listen((c) {
@@ -129,7 +136,7 @@ class MqttService {
       print('MQTT: Subscribed to $userTopic');
     }
     
-    // SETUP LISTENER HERE (Try connecting listener after connection)
+    // SETUP LISTENER HERE (Only if needed)
     if (client.updates != null) {
       _setupUpdateListener(client.updates!);
     }
@@ -140,15 +147,22 @@ class MqttService {
   }
 
   
+ 
 
   void onAutoReconnect() {
     print('MQTT: Auto-reconnecting...');
+    _isListenerAttached = false; // Allow re-attaching if stream changes
   }
 
   void disconnect() {
     client.disconnect();
+    _isListenerAttached = false;
     print('MQTT: Disconnected manually');
   }
 
-  void onDisconnected() => print('MQTT: Disconnected');
+  void onDisconnected() {
+    print('MQTT: Disconnected');
+    _isListenerAttached = false;
+  }
+}
 }
