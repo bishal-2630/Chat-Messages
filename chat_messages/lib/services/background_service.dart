@@ -75,23 +75,38 @@ void onStart(ServiceInstance service) async {
   }
 
   MqttService? mqttService;
+  bool isConnecting = false;
 
   Future<void> startMqtt() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.reload(); // FORCED RELOAD for cross-isolate sync
-    final userId = prefs.getInt('user_id') ?? 0;
-    print('Background Isolate: Starting MQTT for user $userId (Synced)');
-
-    if (userId != 0) {
-      mqttService?.disconnect(); // Disconnect existing if any
-      mqttService = MqttService();
-      await mqttService!.initialize(userId,service);
+    if (isConnecting) {
+      print('Background: Already connecting, skipping redundant start.');
+      return;
+    }
+    
+    isConnecting = true;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.reload(); // FORCED RELOAD for cross-isolate sync
+      final userId = prefs.getInt('user_id') ?? 0;
+      
+      if (userId != 0) {
+        print('Background Isolate: Starting MQTT for user $userId (Synced)');
+        mqttService?.disconnect(); // Disconnect existing if any
+        mqttService = MqttService();
+        await mqttService!.initialize(userId, service);
+      } else {
+        print('Background: No User ID found, cannot start MQTT.');
+      }
+    } catch (e) {
+      print('Background: CRITICAL error in startMqtt: $e');
+    } finally {
+      isConnecting = false;
     }
   }
 
   // Small delay at startup to let SharedPreferences stabilize from main isolate
-  Future.delayed(const Duration(seconds: 3), () async {
-    await startMqtt();
+  Timer(const Duration(seconds: 3), () {
+    startMqtt();
   });
 
   if (service is AndroidServiceInstance) {
