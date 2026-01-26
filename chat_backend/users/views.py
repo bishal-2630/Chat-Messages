@@ -8,6 +8,8 @@ from .mqtt import publish_message
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
+from rest_framework.views import APIView
+from django.db import connection
 
 class CustomAuthToken(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
