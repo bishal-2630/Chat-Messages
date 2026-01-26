@@ -35,36 +35,43 @@ class _ChatScreenState extends State<ChatScreen> {
     
     // Listen for real-time messages via MQTT
     _mqttSubscription = FlutterBackgroundService().on('onMessage').listen((data) {
-      print('UI Relay: onMessage received from background! Data: $data');
+      print('UI Relay: onMessage received from background! Raw Data: ${jsonEncode(data)}');
       if (mounted && data != null) {
         final type = data['type'] ?? 'new_message';
 
         if (type == 'new_message') {
           final senderId = data['sender_id'];
+          print('UI Relay: Processing new_message from sender: $senderId. Target user: ${widget.otherUserId}');
           if (senderId != null && senderId.toString() == widget.otherUserId.toString()) {
             setState(() {
               final messageId = data['id'];
               // Deduplicate: Don't add if ID already exists
-              if (!_messages.any((m) => m['id'].toString() == messageId.toString())) {
+              bool exists = _messages.any((m) => m['id'].toString() == messageId.toString());
+              if (!exists) {
+                print('UI Relay: Adding new message to list: $messageId');
                 _messages.add({
                   'id': messageId,
                   'sender': senderId,
                   'content': data['content'],
-                  'timestamp': DateTime.now().toIso8601String(),
+                  'timestamp': data['timestamp'] ?? DateTime.now().toIso8601String(),
                   'is_read': false,
                   'is_delivered': true,
                 });
                 _scrollToBottom();
+              } else {
+                print('UI Relay: Message $messageId already exists in list, skipping.');
               }
             });
           }
         } else if (type == 'message_deleted') {
           final deletedId = data['message_id'];
+          print('UI Relay: Processing message_deleted for ID: $deletedId');
           setState(() {
             _messages.removeWhere((m) => m['id'].toString() == deletedId.toString());
           });
         } else if (type == 'message_read') {
           final readId = data['message_id'];
+          print('UI Relay: Processing message_read for ID: $readId');
           setState(() {
             final index = _messages.indexWhere((m) => m['id'].toString() == readId.toString());
             if (index != -1) {
@@ -73,6 +80,7 @@ class _ChatScreenState extends State<ChatScreen> {
           });
         } else if (type == 'message_delivered') {
           final deliveredId = data['message_id'];
+          print('UI Relay: Processing message_delivered for ID: $deliveredId');
           setState(() {
             final index = _messages.indexWhere((m) => m['id'].toString() == deliveredId.toString());
             if (index != -1) {
@@ -80,7 +88,7 @@ class _ChatScreenState extends State<ChatScreen> {
             }
           });
         }
-        print('Chat: Processed MQTT $type for ID ${data['message_id'] ?? data['id']}');
+        print('Chat: Successfully processed MQTT $type update.');
       }
     });
   }

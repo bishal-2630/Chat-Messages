@@ -15,11 +15,11 @@ def _do_publish(topic, payload, unique_id):
             qos=1, 
             hostname=BROKER, 
             port=PORT, 
-            client_id=unique_id
+            client_id=unique_id                                                                                                                            
         )
-        print(f"[MQTT] Success! Delivered to {topic}")
+        print(f"[MQTT] SUCCESS: Delivered message to {topic}")
     except Exception as e:
-        print(f"[MQTT] FAILED to deliver to {topic}: {str(e)}")
+        print(f"[MQTT] FAILURE: Could not deliver to {topic}. Error: {str(e)}")
 
 def publish_message(user_id, message_data):
     """

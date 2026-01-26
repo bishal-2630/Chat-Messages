@@ -35,7 +35,7 @@ class MqttService {
     client = MqttServerClient(broker, stableClientId);
     client.port = port;
     client.logging(on: true);
-    client.keepAlivePeriod = 30; // Longer keep-alive for background stability
+    client.keepAlivePeriod = 60; // Longer keep-alive for background stability
     client.onDisconnected = onDisconnected;
     client.onConnected = onConnected;
     client.onSubscribed = onSubscribed;
@@ -46,7 +46,8 @@ class MqttService {
 
     final connMess = MqttConnectMessage()
         .withClientIdentifier(stableClientId)
-        .withWillQos(MqttQos.atMostOnce);
+        .withWillQos(MqttQos.atLeastOnce)
+        .startClean(); // Ensure fresh start to avoid stale session issues
     
     client.connectionMessage = connMess;
 
@@ -129,8 +130,8 @@ class MqttService {
     
     if (_currentUserId != null) {
       final String userTopic = 'bishal_chat/user/$_currentUserId';
-      client.subscribe(userTopic, MqttQos.atMostOnce);
-      print('MQTT: Subscribed to $userTopic');
+      client.subscribe(userTopic, MqttQos.atLeastOnce); // Use QoS 1 for better delivery
+      print('MQTT: Subscribing to $userTopic with QoS 1...');
     }
     
     // SETUP LISTENER HERE (Only if needed)
