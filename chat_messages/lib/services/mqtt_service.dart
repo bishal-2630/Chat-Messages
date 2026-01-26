@@ -91,42 +91,42 @@ class MqttService {
         final payload = MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
 
         try {
-          print('MQTT: Raw Payload: $payload');
+          print('MQTT: [v7] Raw Payload received: $payload');
           final Map<String, dynamic> data = jsonDecode(payload);
           final String type = data['type'] ?? 'new_message';
 
-          // Relay to main isolate
-          print('MQTT: Relaying to Main Isolate via background service bridge...');
+          // --- 1. RELAY TO UI ISOLATE (ALWAYS DO THIS FIRST) ---
+          print('MQTT: [v7] Relaying to UI Isolate via bridge...');
           _backgroundService?.invoke('onMessage', data);
           _messageStreamController.add(data);
 
-          // ONLY show physical system notification for new messages
+          // --- 2. SYSTEM NOTIFICATION LOGIC (CONDITIONAL) ---
           if (type == 'new_message') {
             final String sender = data['sender'] ?? "New Message";
             final String content = data['content'] ?? "";
             final int senderId = int.tryParse(data['sender_id'].toString()) ?? -1;
 
-            // Don't show notification if the chat is currently open in UI
+            // SKIP notification if chat is open in UI
             if (activeChatUserId != null && senderId == activeChatUserId) {
-              print('MQTT: Skipping notification - Chat is currently open');
-              continue;
+              print('MQTT: [v7] Skipping system notification - UI is actively in this chat');
+              continue; 
             }
 
-            // Don't show notification if I sent it myself
+            // SKIP notification if I am the sender
             if (_currentUserId != null && senderId != -1 && senderId == _currentUserId) {
-              print('MQTT: Skipping notification for self-sent message');
+              print('MQTT: [v7] Skipping system notification - I sent this message');
               continue;
             }
 
-            print('MQTT: Triggering System Alert for $sender');
+            print('MQTT: [v7] Triggering System Notification for $sender');
             try {
               NotificationService.showNotification(sender, content);
             } catch (e) {
-              print('MQTT: FAILED to show system notification: $e');
+              print('MQTT: [v7] FAILED to show notification: $e');
             }
           }
         } catch (e) {
-          print('MQTT: CRITICAL JSON parsing error: $e. Payload was: $payload');
+          print('MQTT: [v7] CRITICAL Loop Error: $e. Payload: $payload');
         }
       }
     });

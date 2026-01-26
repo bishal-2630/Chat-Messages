@@ -38,20 +38,22 @@ class _ChatScreenState extends State<ChatScreen> {
 
     // Listen for real-time messages via MQTT
     _mqttSubscription = FlutterBackgroundService().on('onMessage').listen((data) {
-      print('UI Relay: [v7 UI] onMessage received from background! Data: ${jsonEncode(data)}');
+      print('🚨 BRIDGE: [v7 UI] onMessage arrived from background! Data: ${jsonEncode(data)}');
       if (mounted && data != null) {
         final type = data['type'] ?? 'new_message';
 
         if (type == 'new_message') {
           final senderId = data['sender_id'];
-          print('UI Relay: [v7 UI] Processing new_message from $senderId. Expecting: ${widget.otherUserId}');
+          print('🚨 BRIDGE: [v7 UI] New message from $senderId. Target is: ${widget.otherUserId}');
+          
           if (senderId != null && senderId.toString() == widget.otherUserId.toString()) {
+            print('🚨 BRIDGE: [v7 UI] SENDER MATCH! Updating state...');
             setState(() {
               final messageId = data['id'];
               // Deduplicate: Don't add if ID already exists
               bool exists = _messages.any((m) => m['id'].toString() == messageId.toString());
               if (!exists) {
-                print('UI Relay: Adding new message to list: $messageId');
+                print('🚨 BRIDGE: [v7 UI] Inserting message $messageId into list');
                 _messages.add({
                   'id': messageId,
                   'sender': senderId,
@@ -62,9 +64,11 @@ class _ChatScreenState extends State<ChatScreen> {
                 });
                 _scrollToBottom();
               } else {
-                print('UI Relay: Message $messageId already exists in list, skipping.');
+                print('🚨 BRIDGE: [v7 UI] Duplicate ID $messageId found, skipping');
               }
             });
+          } else {
+            print('🚨 BRIDGE: [v7 UI] SENDER MISMATCH. Ignoring bubble.');
           }
         } else if (type == 'message_deleted') {
           final deletedId = data['message_id'];
