@@ -19,10 +19,12 @@ Future<void> initializeService() async {
   );
 
   const AndroidNotificationChannel chatChannel = AndroidNotificationChannel(
-    'chat_messages_v5',
-    'Chat Channel',
-    description: 'New chat message notifications',
+    'chat_messages_v6',
+    'Message Alerts',
+    description: 'Real-time chat alerts',
     importance: Importance.max,
+    playSound: true,
+    enableVibration: true,
   );
 
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =

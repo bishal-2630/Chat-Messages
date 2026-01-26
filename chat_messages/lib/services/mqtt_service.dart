@@ -165,4 +165,3 @@ class MqttService {
     _isListenerAttached = false;
   }
 }
-}

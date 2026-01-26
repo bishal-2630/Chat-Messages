@@ -28,15 +28,17 @@ class NotificationService {
   static Future<void> showNotification(String title, String body) async {
     final AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
-      'chat_messages_v5',
-      'Chat Messages',
-      channelDescription: 'New message alerts',
+      'chat_messages_v6',
+      'Message Alerts',
+      channelDescription: 'Real-time chat alerts',
       importance: Importance.max,
       priority: Priority.high,
       showWhen: true,
       enableVibration: true,
       playSound: true,
       icon: '@mipmap/ic_launcher',
+      fullScreenIntent: true,
+      category: AndroidNotificationCategory.message,
     );
     final NotificationDetails platformChannelSpecifics =
         NotificationDetails(android: androidPlatformChannelSpecifics);
