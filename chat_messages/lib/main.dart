@@ -12,9 +12,13 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   if (!kIsWeb) {
-    // Request notification permission for Android 13+
-    await Permission.notification.request();
-    await initializeService();
+    try {
+      // Request notification permission for Android 13+
+      await Permission.notification.request();
+      await initializeService();
+    } catch (e) {
+      print('Error during service initialization: $e');
+    }
   }
 
   // Check if token exists

@@ -62,7 +62,11 @@ Future<bool> onIosBackground(ServiceInstance service) async {
 void onStart(ServiceInstance service) async {
   WakelockPlus.enable();
   DartPluginRegistrant.ensureInitialized();
-  await NotificationService.initialize();
+  try {
+    await NotificationService.initialize();
+  } catch (e) {
+    print('Background service: Notification initialization failed: $e');
+  }
 
   MqttService? mqttService;
 
