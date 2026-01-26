@@ -13,11 +13,14 @@ class MqttService {
   int? _currentUserId; 
   final String topic = 'test/topic';
   ServiceInstance? _backgroundService;
-
+ 
   // For real-time UI updates
   static final StreamController<Map<String, dynamic>> _messageStreamController = 
       StreamController<Map<String, dynamic>>.broadcast();
   static Stream<Map<String, dynamic>> get messageStream => _messageStreamController.stream;
+
+  bool get isConnected => 
+    client.connectionStatus?.state == MqttConnectionState.connected;
 
   Future<void> initialize(int userId, [ServiceInstance? service]) async {
     _currentUserId = userId;
@@ -42,24 +45,28 @@ class MqttService {
 
     final connMess = MqttConnectMessage()
         .withClientIdentifier(stableClientId)
-        .startClean() 
-        .withWillQos(MqttQos.atMostOnce); // QoS 0
+        .withWillQos(MqttQos.atMostOnce)
+        .startClean();
     client.connectionMessage = connMess;
 
     print('MQTT: Initialization result - User: $userId, CID: $stableClientId');
-    // Attach listener BEFORE connecting to catch early events
-    // Listener moved to onConnected to ensure stream is ready
-    // if (client.updates != null) {
-    //   _setupUpdateListener(client.updates!);
-    // }
 
     Future<void> doConnect() async {
-      try {
-        print('MQTT: Attempting to connect to $broker...');
-        await client.connect();
-      } catch (e) {
-        print('MQTT: Connection attempt failed - $e');
-        // Retry logic managed by library or manually if needed
+      int attempts = 0;
+      const int maxAttempts = 3;
+      
+      while (attempts < maxAttempts && !isConnected) {
+        try {
+          attempts++;
+          print('MQTT: Connection attempt $attempts of $maxAttempts to $broker...');
+          await client.connect();
+          if (isConnected) break;
+        } catch (e) {
+          print('MQTT: Connection attempt $attempts failed: $e');
+          if (attempts < maxAttempts) {
+            await Future.delayed(Duration(seconds: 2 * attempts));
+          }
+        }
       }
     }
 

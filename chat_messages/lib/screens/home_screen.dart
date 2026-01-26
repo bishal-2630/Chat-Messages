@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter_background_service/flutter_background_service.dart';
 import '../constants.dart';
 import 'chat_screen.dart';
 
@@ -12,7 +13,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   List<ChatUser> _users = [];
   bool _isLoading = true;
   String? _currentUserUsername;
@@ -20,8 +21,24 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadCurrentUser();
     _fetchUsers();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      print('UI: App resumed. Refreshing background connectivity...');
+      FlutterBackgroundService().invoke('refresh');
+      _fetchUsers(); // Also refresh user list
+    }
   }
 
   Future<void> _loadCurrentUser() async {
