@@ -134,21 +134,21 @@ void onStart(ServiceInstance service) async {
     print('Background service Heartbeat: Active');
   });
 
-  // CONNECTION WATCHDOG: Check every 5s for faster recovery
-  Timer.periodic(const Duration(seconds: 5), (timer) async {
+  // CONNECTION WATCHDOG: Check every 10s for stability
+  Timer.periodic(const Duration(seconds: 10), (timer) async {
+    if (isConnecting) return; // Busy, skip this cycle
+    
     if (mqttService != null) {
       if (!mqttService!.isConnected) {
         print('Watchdog: MQTT connection LOST. Re-initializing...');
         await startMqtt();
       }
     } else {
-      if (!isConnecting) {
-        final prefs = await SharedPreferences.getInstance();
-        final userId = prefs.getInt('user_id') ?? 0;
-        if (userId != 0) {
-          print('Watchdog: MQTT service found NULL. Auto-starting...');
-          await startMqtt();
-        }
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getInt('user_id') ?? 0;
+      if (userId != 0) {
+        print('Watchdog: MQTT service found NULL. Auto-starting...');
+        await startMqtt();
       }
     }
   });

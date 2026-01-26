@@ -3,9 +3,9 @@ import json
 import uuid
 import threading
 
-BROKER = 'broker.emqx.io'
+BROKER = 'broker.hivemq.com'
 PORT = 1883
-CLIENT_ID = 'django_backend_publisher'
+CLIENT_ID = 'bishal_django_pub'
 
 def _do_publish(topic, payload, unique_id):
     try:

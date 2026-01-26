@@ -8,7 +8,7 @@ import 'notification_service.dart';
 
 class MqttService {
   late MqttServerClient client;
-  final String broker = 'broker.emqx.io'; // Switching to EMQX for better stability
+  final String broker = 'broker.hivemq.com'; 
   final int port = 1883;
   int? _currentUserId; 
   final String topic = 'test/topic';
@@ -28,7 +28,9 @@ class MqttService {
     _backgroundService = service;
     _updatesSubscription?.cancel(); // Clear any stale listeners
     // USE TRULY STABLE ID for session persistence
-    final String stableClientId = 'bishal_user_client_$userId';
+    // Use a MORE unique ID to avoid collisions on public brokers
+    final String randomSuffix = DateTime.now().millisecondsSinceEpoch.toString().substring(7);
+    final String stableClientId = 'bishal_flutter_${userId}_$randomSuffix';
     
     print('MQTT: Initializing with STABLE CID: $stableClientId');
     
@@ -46,8 +48,7 @@ class MqttService {
 
     final connMess = MqttConnectMessage()
         .withClientIdentifier(stableClientId)
-        .withWillQos(MqttQos.atLeastOnce)
-        .startClean(); // Ensure fresh start to avoid stale session issues
+        .startClean(); 
     
     client.connectionMessage = connMess;
 
