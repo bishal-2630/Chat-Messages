@@ -44,6 +44,7 @@ Future<void> initializeService() async {
       initialNotificationTitle: 'System Sync',
       initialNotificationContent: 'Active',
       foregroundServiceNotificationId: 888,
+      foregroundServiceIconName: 'ic_launcher', // Explicitly set icon
     ),
     iosConfiguration: IosConfiguration(
       autoStart: true,

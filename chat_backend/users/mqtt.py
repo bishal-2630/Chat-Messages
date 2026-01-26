@@ -12,7 +12,7 @@ def _do_publish(topic, payload, unique_id):
         publish.single(
             topic, 
             payload=payload, 
-            qos=1, 
+            qos=0, 
             hostname=BROKER, 
             port=PORT, 
             client_id=unique_id

@@ -25,16 +25,15 @@ class MqttService {
   Future<void> initialize(int userId, [ServiceInstance? service]) async {
     _currentUserId = userId;
     _backgroundService = service;
-    // Use a more unique client ID to avoid conflicts
-    final String uniqueId = DateTime.now().millisecondsSinceEpoch.toString().substring(7);
-    final String stableClientId = 'user_chat_${userId}_$uniqueId';
+    // USE TRULY STABLE ID for session persistence
+    final String stableClientId = 'bishal_user_client_$userId';
     
-    print('MQTT: Initializing for user $userId with CID $stableClientId');
+    print('MQTT: Initializing with STABLE CID: $stableClientId');
     
     client = MqttServerClient(broker, stableClientId);
     client.port = port;
     client.logging(on: true);
-    client.keepAlivePeriod = 15; // Detect connection loss much faster (15s instead of 30s)
+    client.keepAlivePeriod = 30; // Longer keep-alive for background stability
     client.onDisconnected = onDisconnected;
     client.onConnected = onConnected;
     client.onSubscribed = onSubscribed;
@@ -45,8 +44,8 @@ class MqttService {
 
     final connMess = MqttConnectMessage()
         .withClientIdentifier(stableClientId)
-        .withWillQos(MqttQos.atMostOnce)
-        .startClean();
+        .withWillQos(MqttQos.atMostOnce);
+    // REMOVED startClean() to allow broker persistence
     client.connectionMessage = connMess;
 
     print('MQTT: Initialization result - User: $userId, CID: $stableClientId');
