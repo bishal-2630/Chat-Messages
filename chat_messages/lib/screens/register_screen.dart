@@ -18,7 +18,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isLoading = false;
 
   Future<void> _register() async {
-  // Use 10.0.2.2 for Android Emulator, or your local IP (192.168.x.x) for physical devices
   const String url = '${ApiConstants.baseUrl}/register/';
 
   setState(() {
@@ -37,15 +36,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
 
     if (response.statusCode == 201) {
-      // 201 Created is the standard response for a successful DRF CreateAPIView
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Registration successful!')),
         );
-        Navigator.pushReplacementNamed(context, '/home');
+        Navigator.pop(context); // Go back to login
       }
     } else {
-      // Show error from server (e.g., username already exists)
       final errorData = jsonDecode(response.body);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -71,68 +68,125 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Register'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+      body: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.deepPurple.shade800, Colors.deepPurple.shade400],
+          ),
         ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            TextField(
-              controller: _usernameController,
-              decoration: const InputDecoration(
-                labelText: 'Username',
-                prefixIcon: Icon(Icons.person),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _emailController,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                prefixIcon: Icon(Icons.email),
-              ),
-              keyboardType: TextInputType.emailAddress,
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _passwordController,
-              decoration: InputDecoration(
-                labelText: 'Password',
-                prefixIcon: const Icon(Icons.lock),
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _isPasswordVisible = !_isPasswordVisible;
-                    });
-                  },
+            const SizedBox(height: 60),
+            Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+                  onPressed: () => Navigator.pop(context),
                 ),
-              ),
-              obscureText: !_isPasswordVisible,
+                const Text(
+                  'Create Account',
+                  style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+              ],
             ),
             const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _isLoading ? null : _register, 
-              child: _isLoading
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text('Register'),
+            const Text(
+              'Join us today!',
+              style: TextStyle(color: Colors.white70, fontSize: 16),
             ),
-            const SizedBox(height: 16),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('Already have an account? Login'),
+            const SizedBox(height: 30),
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 40),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(50),
+                    topRight: Radius.circular(50),
+                  ),
+                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      TextField(
+                        controller: _usernameController,
+                        decoration: InputDecoration(
+                          labelText: 'Username',
+                          prefixIcon: const Icon(Icons.person_outline),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _emailController,
+                        decoration: InputDecoration(
+                          labelText: 'Email',
+                          prefixIcon: const Icon(Icons.email_outlined),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          ),
+                        ),
+                        keyboardType: TextInputType.emailAddress,
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _passwordController,
+                        decoration: InputDecoration(
+                          labelText: 'Password',
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                              color: Colors.grey,
+                            ),
+                            onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+                          ),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          ),
+                        ),
+                        obscureText: !_isPasswordVisible,
+                      ),
+                      const SizedBox(height: 40),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 55,
+                        child: ElevatedButton(
+                          onPressed: _isLoading ? null : _register, 
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.deepPurple,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                            elevation: 5,
+                          ),
+                          child: _isLoading
+                              ? const CircularProgressIndicator(color: Colors.white)
+                              : const Text('REGISTER', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text(
+                          "Already have an account? Login",
+                          style: TextStyle(color: Colors.deepPurple.shade400, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ],
         ),

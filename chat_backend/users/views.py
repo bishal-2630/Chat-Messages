@@ -59,8 +59,48 @@ class MessageListCreateView(generics.ListCreateAPIView):
         
         # Publish to MQTT for offline notifications
         publish_message(message.receiver.id, {
+            'type': 'new_message',
+            'id': message.id,
             'sender_id': message.sender.id,
             'sender': message.sender.username,
             'content': message.content,
             'timestamp': str(message.timestamp)
         })
+
+class MessageDeleteView(generics.DestroyAPIView):
+    queryset = Message.objects.all()
+    permission_classes = (IsAuthenticated,)
+
+    def get_queryset(self):
+        return self.queryset.filter(sender=self.request.user)
+    
+    def perform_destroy(self, instance):
+        receiver_id = instance.receiver.id
+        msg_id = instance.id
+        super().perform_destroy(instance)
+        
+        # Notify receiver via MQTT that message was deleted
+        publish_message(receiver_id, {
+            'type': 'message_deleted',
+            'message_id': msg_id
+        })
+
+class MarkMessageReadView(generics.UpdateAPIView):
+    queryset = Message.objects.all()
+    permission_classes = (IsAuthenticated,)
+    serializer_class = MessageSerializer
+
+    def patch(self, request, *args, **kwargs):
+        message = self.get_object()
+        if message.receiver == request.user:
+            message.is_read = True
+            message.save()
+            
+            # Notify sender via MQTT that message was read
+            publish_message(message.sender.id, {
+                'type': 'message_read',
+                'message_id': message.id
+            })
+            return Response({'status': 'read'})
+        return Response({'status': 'error'}, status=403)
+

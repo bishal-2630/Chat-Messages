@@ -19,15 +19,15 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
 
   // Function to save the token and user info locally
-  Future<void> _saveSession(String token, int userId, String email) async {
+  Future<void> _saveSession(String token, int userId, String email, String username) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('auth_token', token);
     await prefs.setInt('user_id', userId);
     await prefs.setString('email', email);
+    await prefs.setString('username', username);
   }
 
   Future<void> _login() async {
-    // FIX: Use 10.0.2.2 for emulator and 8000 port
     const String url = '${ApiConstants.baseUrl}/login/'; 
 
     setState(() {
@@ -46,10 +46,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        // Save token and user info
-        await _saveSession(data['token'], data['user_id'], data['email']); 
+        await _saveSession(data['token'], data['user_id'], data['email'], data['username'] ?? _usernameController.text.trim()); 
 
-        // Trigger background service to refresh MQTT connection
         FlutterBackgroundService().invoke("refresh");
         
         if (mounted) {
@@ -80,33 +78,104 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Login')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      body: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.deepPurple.shade800, Colors.deepPurple.shade400],
+          ),
+        ),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            TextField(
-              controller: _usernameController,
-              decoration: const InputDecoration(labelText: 'Username'),
-            ),
-            TextField(
-              controller: _passwordController,
-              decoration: const InputDecoration(labelText: 'Password'),
-              obscureText: true,
-            ),
+            const SizedBox(height: 80),
+            const Icon(Icons.chat_bubble_rounded, size: 80, color: Colors.white),
             const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _isLoading ? null : _login,
-              child: _isLoading
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text('Login'),
+            const Text(
+              'Welcome Back',
+              style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
             ),
-            TextButton(
-              onPressed: () {
-                Navigator.pushNamed(context, '/register');
-              },
-              child: const Text('Register'),
+            const Text(
+              'Sign in to continue',
+              style: TextStyle(color: Colors.white70, fontSize: 16),
+            ),
+            const SizedBox(height: 50),
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 40),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(50),
+                    topRight: Radius.circular(50),
+                  ),
+                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      TextField(
+                        controller: _usernameController,
+                        decoration: InputDecoration(
+                          labelText: 'Username',
+                          prefixIcon: const Icon(Icons.person_outline),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      TextField(
+                        controller: _passwordController,
+                        decoration: InputDecoration(
+                          labelText: 'Password',
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                              color: Colors.grey,
+                            ),
+                            onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+                          ),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          ),
+                        ),
+                        obscureText: !_isPasswordVisible,
+                      ),
+                      const SizedBox(height: 40),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 55,
+                        child: ElevatedButton(
+                          onPressed: _isLoading ? null : _login,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.deepPurple,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                            elevation: 5,
+                          ),
+                          child: _isLoading
+                              ? const CircularProgressIndicator(color: Colors.white)
+                              : const Text('LOGIN', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      TextButton(
+                        onPressed: () => Navigator.pushNamed(context, '/register'),
+                        child: Text(
+                          "Don't have an account? Register",
+                          style: TextStyle(color: Colors.deepPurple.shade400, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ],
         ),

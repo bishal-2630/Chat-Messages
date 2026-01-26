@@ -16,6 +16,7 @@ class Message(models.Model):
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
     is_delivered = models.BooleanField(default=False)
+    is_read = models.BooleanField(default=False)
 
     def __str__(self):
         return f'{self.sender.username} -> {self.receiver.username}'

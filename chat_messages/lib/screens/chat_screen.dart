@@ -34,15 +34,35 @@ class _ChatScreenState extends State<ChatScreen> {
     // Listen for real-time messages via MQTT
     _mqttSubscription = FlutterBackgroundService().on('onMessage').listen((data) {
       if (mounted && data != null) {
-        final senderId = data['sender_id'];
-        if (senderId != null && senderId.toString() == widget.otherUserId.toString()) {
-          setState(() {
-            _messages.add({
-              'sender': senderId,
-              'content': data['content'],
-              'timestamp': DateTime.now().toIso8601String(),
+        final type = data['type'] ?? 'new_message';
+
+        if (type == 'new_message') {
+          final senderId = data['sender_id'];
+          if (senderId != null && senderId.toString() == widget.otherUserId.toString()) {
+            setState(() {
+              _messages.add({
+                'id': data['id'],
+                'sender': senderId,
+                'content': data['content'],
+                'timestamp': DateTime.now().toIso8601String(),
+                'is_read': false,
+                'is_delivered': true,
+              });
+              _scrollToBottom();
             });
-            _scrollToBottom();
+          }
+        } else if (type == 'message_deleted') {
+          final deletedId = data['message_id'];
+          setState(() {
+            _messages.removeWhere((m) => m['id'] == deletedId);
+          });
+        } else if (type == 'message_read') {
+          final readId = data['message_id'];
+          setState(() {
+            final index = _messages.indexWhere((m) => m['id'] == readId);
+            if (index != -1) {
+              _messages[index]['is_read'] = true;
+            }
           });
         }
       }
@@ -146,10 +166,92 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  Future<void> _markAsRead(int messageId) async {
+    if (_token == null) return;
+    try {
+      await http.patch(
+        Uri.parse('${ApiConstants.baseUrl}/messages/$messageId/read/'),
+        headers: {
+          'Authorization': 'Token $_token',
+          'Content-Type': 'application/json',
+        },
+      );
+    } catch (e) {
+      print('Error marking as read: $e');
+    }
+  }
+
+  Future<void> _deleteMessage(int messageId) async {
+    if (_token == null) return;
+    try {
+      final response = await http.delete(
+        Uri.parse('${ApiConstants.baseUrl}/messages/$messageId/delete/'),
+        headers: {
+          'Authorization': 'Token $_token',
+        },
+      );
+
+      if (response.statusCode == 204) {
+        setState(() {
+          _messages.removeWhere((m) => m['id'] == messageId);
+        });
+      }
+    } catch (e) {
+      print('Error deleting message: $e');
+    }
+  }
+
+  void _showDeleteMenu(BuildContext context, Offset tapPosition, int messageId) {
+    final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+    
+    showMenu(
+      context: context,
+      position: RelativeRect.fromRect(
+        tapPosition & const Size(40, 40), // smaller rect, the tap position
+        Offset.zero & overlay.size,   // Entire screen
+      ),
+      items: [
+        const PopupMenuItem(
+          value: 'delete',
+          child: Row(
+            children: [
+              Icon(Icons.delete_outline, color: Colors.redAccent),
+              SizedBox(width: 8),
+              Text('Delete for everyone', style: TextStyle(color: Colors.redAccent)),
+            ],
+          ),
+        ),
+      ],
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ).then((value) {
+      if (value == 'delete') {
+        _deleteMessage(messageId);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.otherUsername)),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        automaticallyImplyLeading: false, // Remove default back button
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Row(
+          children: [
+            CircleAvatar(
+              radius: 16,
+              child: Text(widget.otherUsername[0].toUpperCase()),
+            ),
+            const SizedBox(width: 10),
+            Text(widget.otherUsername, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          ],
+        ),
+        elevation: 1,
+      ),
       body: Column(
         children: [
           Expanded(
@@ -161,34 +263,59 @@ class _ChatScreenState extends State<ChatScreen> {
                   itemBuilder: (context, index) {
                     final msg = _messages[index];
                     final isMe = msg['sender'].toString() == _myId.toString();
-                    
-                    // DEBUG: Check why alignment might be wrong
-                    if (index == 0) { // Print only once per render to avoid spam
-                       print('DEBUG: My ID: $_myId'); 
-                       print('DEBUG: Msg Sender: ${msg['sender']} (isMe: $isMe)');
+                    final isRead = msg['is_read'] ?? false;
+
+                    // Mark as read if not me and not read
+                    if (!isMe && !isRead) {
+                      _markAsRead(msg['id']);
+                      msg['is_read'] = true; // Local update
                     }
 
-                    return Align(
-                      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-                      child: Container(
-                        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
-                        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
-                        decoration: BoxDecoration(
-                          color: isMe ? Colors.deepPurple : Colors.grey[200],
-                          borderRadius: BorderRadius.only(
-                            topLeft: const Radius.circular(16),
-                            topRight: const Radius.circular(16),
-                            bottomLeft: isMe ? const Radius.circular(16) : Radius.zero,
-                            bottomRight: isMe ? Radius.zero : const Radius.circular(16),
-                          ),
-                        ),
-                        child: Text(
-                          msg['content'],
-                          style: TextStyle(
-                            color: isMe ? Colors.white : Colors.black87,
-                            fontSize: 16,
-                          ),
+                    Offset? tapPosition;
+
+                    return GestureDetector(
+                      onTapDown: (details) => tapPosition = details.globalPosition,
+                      onLongPress: isMe ? () {
+                        if (tapPosition != null) {
+                          _showDeleteMenu(context, tapPosition!, msg['id']);
+                        }
+                      } : null,
+                      child: Align(
+                        alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                        child: Column(
+                          crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+                              margin: const EdgeInsets.symmetric(vertical: 2, horizontal: 8),
+                              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+                              decoration: BoxDecoration(
+                                color: isMe ? Colors.deepPurple : Colors.grey[200],
+                                borderRadius: BorderRadius.only(
+                                  topLeft: const Radius.circular(16),
+                                  topRight: const Radius.circular(16),
+                                  bottomLeft: isMe ? const Radius.circular(16) : Radius.zero,
+                                  bottomRight: isMe ? Radius.zero : const Radius.circular(16),
+                                ),
+                              ),
+                              child: Text(
+                                msg['content'] ?? "",
+                                style: TextStyle(
+                                  color: isMe ? Colors.white : Colors.black87,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                            if (isMe)
+                              Padding(
+                                padding: const EdgeInsets.only(right: 12, bottom: 4),
+                                child: Icon(
+                                  isRead ? Icons.done_all : Icons.check,
+                                  size: 14,
+                                  color: isRead ? Colors.blue : Colors.grey,
+                                ),
+                              ),
+                          ],
                         ),
                       ),
                     );
@@ -196,14 +323,27 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
           ),
           Container(
-            padding: const EdgeInsets.all(8.0),
-            decoration: BoxDecoration(color: Colors.white, boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)]),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border(top: BorderSide(color: Colors.grey.shade200)),
+            ),
             child: Row(
               children: [
                 Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    decoration: const InputDecoration(hintText: "Type a message...", border: InputBorder.none),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: TextField(
+                      controller: _controller,
+                      decoration: const InputDecoration(
+                        hintText: "Aa",
+                        border: InputBorder.none,
+                      ),
+                    ),
                   ),
                 ),
                 IconButton(
