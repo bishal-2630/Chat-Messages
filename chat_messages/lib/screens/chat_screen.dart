@@ -65,7 +65,7 @@ class _ChatScreenState extends State<ChatScreen> {
         } else if (type == 'message_read') {
           final readId = data['message_id'];
           setState(() {
-            final index = _messages.indexWhere((m) => m['id'] == readId);
+            final index = _messages.indexWhere((m) => m['id'].toString() == readId.toString());
             if (index != -1) {
               _messages[index]['is_read'] = true;
             }
