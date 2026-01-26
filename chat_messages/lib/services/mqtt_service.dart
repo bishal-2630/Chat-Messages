@@ -31,7 +31,7 @@ class MqttService {
     client = MqttServerClient(broker, stableClientId);
     client.port = port;
     client.logging(on: true);
-    client.keepAlivePeriod = 60;
+    client.keepAlivePeriod = 30; // Faster failure detection
     client.onDisconnected = onDisconnected;
     client.onConnected = onConnected;
     client.onSubscribed = onSubscribed;
@@ -47,22 +47,22 @@ class MqttService {
     client.connectionMessage = connMess;
 
     print('MQTT: Initialization result - User: $userId, CID: $stableClientId');
-    try {
-      print('MQTT: Attempting to connect to $broker...');
-      await client.connect();
-      
-      // Attach listener AFTER connecting for stream stability
-      final updates = client.updates;
-      if (updates != null) {
-        _setupUpdateListener(updates);
-        print('MQTT: Status -> Listener attached to updates stream');
-      } else {
-        print('MQTT: ERROR -> client.updates is NULL');
-      }
-    } catch (e) {
-      print('MQTT: Connection failed HARD - $e');
-      client.disconnect();
+    // Attach listener BEFORE connecting to catch early events
+    if (client.updates != null) {
+      _setupUpdateListener(client.updates!);
     }
+
+    Future<void> doConnect() async {
+      try {
+        print('MQTT: Attempting to connect to $broker...');
+        await client.connect();
+      } catch (e) {
+        print('MQTT: Connection attempt failed - $e');
+        // Retry logic managed by library or manually if needed
+      }
+    }
+
+    await doConnect();
   }
 
   void _setupUpdateListener(Stream<List<MqttReceivedMessage<MqttMessage?>>> updates) {

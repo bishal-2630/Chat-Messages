@@ -48,7 +48,9 @@ class _LoginScreenState extends State<LoginScreen> {
         final data = jsonDecode(response.body);
         final int userId = int.tryParse(data['user_id'].toString()) ?? 0;
         await _saveSession(data['token'], userId, data['email'], data['username'] ?? _usernameController.text.trim()); 
-
+        
+        // Give SharedPreferences time to flush to disk before waking background isolate
+        await Future.delayed(const Duration(milliseconds: 500));
         FlutterBackgroundService().invoke("refresh");
         
         if (mounted) {

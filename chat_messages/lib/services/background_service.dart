@@ -60,6 +60,10 @@ Future<bool> onIosBackground(ServiceInstance service) async {
 
 @pragma('vm:entry-point')
 void onStart(ServiceInstance service) async {
+  if (service is AndroidServiceInstance) {
+    service.setAsForegroundService();
+  }
+  
   print('Background service: [onStart] triggered');
   WakelockPlus.enable();
   DartPluginRegistrant.ensureInitialized();
@@ -73,8 +77,9 @@ void onStart(ServiceInstance service) async {
 
   Future<void> startMqtt() async {
     final prefs = await SharedPreferences.getInstance();
+    await prefs.reload(); // FORCED RELOAD for cross-isolate sync
     final userId = prefs.getInt('user_id') ?? 0;
-    print('Background: Starting MQTT for user $userId');
+    print('Background Isolate: Starting MQTT for user $userId (Synced)');
 
     if (userId != 0) {
       mqttService?.disconnect(); // Disconnect existing if any
@@ -83,7 +88,10 @@ void onStart(ServiceInstance service) async {
     }
   }
 
-  await startMqtt();
+  // Small delay at startup to let SharedPreferences stabilize from main isolate
+  Future.delayed(const Duration(seconds: 3), () async {
+    await startMqtt();
+  });
 
   if (service is AndroidServiceInstance) {
     service.on('setAsForeground').listen((event) {
