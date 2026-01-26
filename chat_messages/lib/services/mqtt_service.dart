@@ -33,7 +33,7 @@ class MqttService {
     final String randomSuffix = DateTime.now().millisecondsSinceEpoch.toString().substring(7);
     final String stableClientId = 'bishal_flutter_${userId}_$randomSuffix';
     
-    print('MQTT: Initializing with STABLE CID: $stableClientId');
+    print('MQTT: [v7] Initializing with STABLE CID: $stableClientId');
     
     client = MqttServerClient(broker, stableClientId);
     client.port = port;
@@ -80,7 +80,7 @@ class MqttService {
   void _setupUpdateListener(Stream<List<MqttReceivedMessage<MqttMessage?>>> updates) {
     _updatesSubscription?.cancel(); // Ensure only one listener active
     
-    print('MQTT: Setting up Update Listener...'); 
+    print('MQTT: [v7] Setting up Update Listener...'); 
     _updatesSubscription = updates.listen((c) {
       if (c == null || c.isEmpty) return;
       print('MQTT: --> Batch received. Count: ${c.length}');
@@ -133,7 +133,7 @@ class MqttService {
   }
 
   void onConnected() {
-    print('MQTT: Connected to $broker');
+    print('MQTT: [v7] Connected to $broker');
     
     if (_currentUserId != null) {
       final String userTopic = 'bishal_chat/user/$_currentUserId';

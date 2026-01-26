@@ -66,7 +66,7 @@ void onStart(ServiceInstance service) async {
     service.setAsForegroundService();
   }
   
-  print('Background service: [onStart] triggered');
+  print('Background service: [onStart v7] triggered');
   WakelockPlus.enable();
   DartPluginRegistrant.ensureInitialized();
   try {
@@ -92,7 +92,7 @@ void onStart(ServiceInstance service) async {
       final userId = prefs.getInt('user_id') ?? 0;
       
       if (userId != 0) {
-        print('Background Isolate: Starting MQTT for user $userId (Synced)');
+        print('Background Isolate: [v7] Starting MQTT for user $userId (Synced)');
         mqttService?.disconnect(); // Disconnect existing if any
         mqttService = MqttService();
         await mqttService!.initialize(userId, service);
