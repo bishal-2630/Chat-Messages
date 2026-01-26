@@ -12,10 +12,10 @@ Future<void> initializeService() async {
   final service = FlutterBackgroundService();
 
   const AndroidNotificationChannel channel = AndroidNotificationChannel(
-    'my_foreground_v3', 
+    'System Connectivity', 
     'System Connectivity',
-    description: 'Maintains system connectivity in background.',
-    importance: Importance.low,
+    description: 'Maintains background system connectivity.',
+    importance: Importance.low, // Keep it silent but alive
   );
 
   const AndroidNotificationChannel chatChannel = AndroidNotificationChannel(
@@ -41,7 +41,7 @@ Future<void> initializeService() async {
       autoStart: true,
       isForegroundMode: true,
       notificationChannelId: 'my_foreground_v3',
-      initialNotificationTitle: 'System Connectivity',
+      initialNotificationTitle: 'System Sync',
       initialNotificationContent: 'Active',
       foregroundServiceNotificationId: 888,
     ),

@@ -13,6 +13,12 @@ class NotificationService {
         InitializationSettings(android: initializationSettingsAndroid);
 
     await _notificationsPlugin.initialize(initializationSettings);
+    
+    // Explicitly request permissions for Android 13+
+    final androidPlugin = _notificationsPlugin
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    await androidPlugin?.requestNotificationsPermission();
+    print('NotificationService: Initialized and permissions requested');
   }
 
   static Future<void> showNotification(String title, String body) async {
@@ -22,10 +28,8 @@ class NotificationService {
       'Chat Messages',
       channelDescription: 'New message alerts',
       importance: Importance.max,
-      priority: Priority.max,
-      ticker: 'ticker',
-      category: AndroidNotificationCategory.message,
-      visibility: NotificationVisibility.public,
+      priority: Priority.high,
+      showWhen: true,
       enableVibration: true,
       playSound: true,
     );
@@ -35,6 +39,7 @@ class NotificationService {
     // Unique ID based on timestamp to avoid overwriting previous notifications
     int id = DateTime.now().millisecondsSinceEpoch.remainder(100000);
     
+    print('NotificationService: Displaying alert - $title: $body');
     await _notificationsPlugin.show(
       id,
       title,

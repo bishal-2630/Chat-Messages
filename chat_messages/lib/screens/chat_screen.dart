@@ -44,7 +44,7 @@ class _ChatScreenState extends State<ChatScreen> {
             setState(() {
               final messageId = data['id'];
               // Deduplicate: Don't add if ID already exists
-              if (!_messages.any((m) => m['id'] == messageId)) {
+              if (!_messages.any((m) => m['id'].toString() == messageId.toString())) {
                 _messages.add({
                   'id': messageId,
                   'sender': senderId,
