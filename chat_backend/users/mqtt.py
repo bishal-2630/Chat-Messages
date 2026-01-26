@@ -1,26 +1,14 @@
 import paho.mqtt.publish as publish
 import json
 import uuid
+import threading
 
 BROKER = 'broker.emqx.io'
 PORT = 1883
 CLIENT_ID = 'django_backend_publisher'
 
-def publish_message(user_id, message_data):
-    """
-    Publishes a message to the user's specific topic.
-    Topic: bishal_chat/user/{user_id}
-    """
-    topic = f'bishal_chat/user/{user_id}'
-    payload = json.dumps(message_data)
-    
-    # Use a unique client ID to avoid collisions
-    unique_id = f"{CLIENT_ID}_{uuid.uuid4().hex[:6]}"
-    
+def _do_publish(topic, payload, unique_id):
     try:
-        print(f"[MQTT] Attempting to deliver to {topic}...")
-        
-        # publish.single handles connection, loop, publish, and disconnection automatically
         publish.single(
             topic, 
             payload=payload, 
@@ -29,8 +17,19 @@ def publish_message(user_id, message_data):
             port=PORT, 
             client_id=unique_id
         )
-        
         print(f"[MQTT] Success! Delivered to {topic}")
-        
     except Exception as e:
         print(f"[MQTT] FAILED to deliver to {topic}: {str(e)}")
+
+def publish_message(user_id, message_data):
+    """
+    Publishes a message to the user's specific topic (Asynchronously).
+    Topic: bishal_chat/user/{user_id}
+    """
+    topic = f'bishal_chat/user/{user_id}'
+    payload = json.dumps(message_data)
+    unique_id = f"{CLIENT_ID}_{uuid.uuid4().hex[:6]}"
+    
+    # Run in background thread so Django doesn't wait for MQTT
+    threading.Thread(target=_do_publish, args=(topic, payload, unique_id), daemon=True).start()
+    print(f"[MQTT] Background publish started for {topic}")

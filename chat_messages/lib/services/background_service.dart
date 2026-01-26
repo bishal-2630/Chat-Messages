@@ -39,7 +39,7 @@ Future<void> initializeService() async {
     androidConfiguration: AndroidConfiguration(
       onStart: onStart,
       autoStart: true,
-      isForegroundMode: true,
+      isForegroundMode: false,
       notificationChannelId: 'my_foreground_v3',
       initialNotificationTitle: 'Chat Service Active',
       initialNotificationContent: 'Monitoring for incoming messages',
@@ -100,14 +100,6 @@ void onStart(ServiceInstance service) async {
   });
 
   Timer.periodic(const Duration(minutes: 1), (timer) async {
-    if (service is AndroidServiceInstance) {
-      if (!(await service.isForegroundService())) {
-        service.setForegroundNotificationInfo(
-          title: "My App Service",
-          content: "Updated at ${DateTime.now()}",
-        );
-      }
-    }
     print('Background service running...');
   });
 }

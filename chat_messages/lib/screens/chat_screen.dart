@@ -154,36 +154,61 @@ class _ChatScreenState extends State<ChatScreen> {
     final text = _controller.text.trim();
     if (text.isEmpty || _token == null || _isSending) return;
 
-    setState(() => _isSending = true);
-
-    final messageData = {
-      'receiver': widget.otherUserId,
+    final tempId = DateTime.now().millisecondsSinceEpoch;
+    final tempMessage = {
+      'id': tempId,
+      'sender': _myId,
       'content': text,
+      'timestamp': DateTime.now().toIso8601String(),
+      'is_read': false,
+      'is_delivered': false,
+      'is_optimistic': true, // Flag for temporary message
     };
+
+    setState(() {
+      _isSending = true;
+      _messages.add(tempMessage);
+      _scrollToBottom();
+    });
 
     _controller.clear();
 
     try {
-      // 1. Save to Backend
       final response = await http.post(
         Uri.parse('${ApiConstants.baseUrl}/messages/'),
         headers: {
           'Authorization': 'Token $_token',
           'Content-Type': 'application/json',
         },
-        body: jsonEncode(messageData),
+        body: jsonEncode({
+          'receiver': widget.otherUserId,
+          'content': text,
+        }),
       );
 
       if (response.statusCode == 201) {
-        // 2. Local Update
-        _fetchHistory();
-        
-        // 3. Optional: Send via MQTT for instant delivery if receiver is listening
-        // This usually happens server-side with Django Channels, 
-        // but for your MQTT setup, you can publish here.
+        final realMessage = jsonDecode(response.body);
+        if (mounted) {
+          setState(() {
+            final index = _messages.indexWhere((m) => m['id'] == tempId);
+            if (index != -1) {
+              _messages[index] = realMessage;
+            }
+          });
+        }
+      } else {
+         throw Exception('Failed to send');
       }
     } catch (e) {
       print('Send error: $e');
+      if (mounted) {
+        setState(() {
+          _messages.removeWhere((m) => m['id'] == tempId);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to send message'), duration: Duration(seconds: 2)),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isSending = false);
     }
