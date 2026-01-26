@@ -6,6 +6,6 @@ class ApiConstants {
 
   
   // MQTT settings
-  static const String mqttBroker = 'broker.emqx.io';
+  static const String mqttBroker = 'broker.hivemq.com';
   static const int mqttPort = 1883;
 }

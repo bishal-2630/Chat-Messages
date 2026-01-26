@@ -42,7 +42,9 @@ class _ChatScreenState extends State<ChatScreen> {
       if (mounted && data != null) {
         final type = data['type'] ?? 'new_message';
 
-        if (type == 'new_message') {
+        if (type == 'bridge_ping') {
+          print('🚨 BRIDGE: [v7 UI] Heartbeat/Ping received from background isolate! Bridge is ALIVE.');
+        } else if (type == 'new_message') {
           final senderId = data['sender_id'];
           print('🚨 BRIDGE: [v7 UI] New message from $senderId. Target is: ${widget.otherUserId}');
           

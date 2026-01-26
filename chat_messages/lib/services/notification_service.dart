@@ -5,23 +5,32 @@ class NotificationService {
   static final FlutterLocalNotificationsPlugin _notificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
-  static Future<void> initialize() async {
-    print('NotificationService: Starting initialization...');
+  static Future<void> initialize({bool isBackground = false}) async {
+    print('NotificationService: Starting initialization (isBackground: $isBackground)...');
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    const InitializationSettings initializationSettings =
-        InitializationSettings(android: initializationSettingsAndroid);
+    const InitializationSettings initializationSettings = InitializationSettings(
+      android: initializationSettingsAndroid,
+    );
 
     try {
       await _notificationsPlugin.initialize(initializationSettings);
       
-      final androidPlugin = _notificationsPlugin
-          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
-      await androidPlugin?.requestNotificationsPermission();
-      print('NotificationService: Initialization COMPLETE, permissions requested');
+      // Permission requests MUST happen on the UI isolate (Activity context)
+      if (!isBackground) {
+        if (Platform.isAndroid) {
+          await _notificationsPlugin
+              .resolvePlatformSpecificImplementation<
+                  AndroidFlutterLocalNotificationsPlugin>()
+              ?.requestNotificationsPermission();
+        }
+        print('NotificationService: Initialization COMPLETE, permissions requested');
+      } else {
+        print('NotificationService: Initialization COMPLETE (background, no permission request)');
+      }
     } catch (e) {
-      print('NotificationService: CRITICAL INITIALIZATION ERROR: $e');
+      print('NotificationService: INITIALIZATION ERROR: $e');
     }
   }
 

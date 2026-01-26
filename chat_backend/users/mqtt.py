@@ -8,24 +8,23 @@ BROKER = 'broker.hivemq.com'
 PORT = 1883
 
 def _do_publish(topic, payload):
-    """
-    Synchronous inner function using the proven publish.single method.
-    """
-    print(f"[MQTT-THREAD] Started for {topic} at {time.strftime('%H:%M:%S')}")
+    print(f"[MQTT-THREAD] Entering _do_publish for {topic}")
     try:
-        print(f"[MQTT-THREAD] Attempting publish.single to {topic}...")
+        unique_pub_id = f"bishal_django_pub_{uuid.uuid4().hex[:6]}"
+        print(f"[MQTT-THREAD] Attempting publish.single to {topic} (ID: {unique_pub_id})...")
         publish.single(
             topic, 
             payload=payload, 
             qos=0, 
             hostname=BROKER, 
-            port=PORT
+            port=PORT,
+            client_id=unique_pub_id
         )
         print(f"[MQTT-THREAD] SUCCESS for {topic} at {time.strftime('%H:%M:%S')}")
     except Exception as e:
         print(f"[MQTT-THREAD] ERROR for {topic}: {str(e)}")
     finally:
-        print(f"[MQTT-THREAD] Finished/Exiting for {topic}")
+        print(f"[MQTT-THREAD] Exiting thread for {topic}")
 
 def publish_message(user_id, message_data):
     """

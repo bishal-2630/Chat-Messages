@@ -70,11 +70,17 @@ void onStart(ServiceInstance service) async {
   WakelockPlus.enable();
   DartPluginRegistrant.ensureInitialized();
   try {
-    await NotificationService.initialize();
-    print('Background service: NotificationService initialized successfully');
+    await NotificationService.initialize(isBackground: true);
+    print('Background service: [v7] NotificationService initialized for Background');
   } catch (e) {
-    print('Background service: Notification initialization failed: $e');
+    print('Background service: [v7] Notification initialization failed: $e');
   }
+
+  // --- BRIDGE TEST HEARTBEAT ---
+  Timer.periodic(const Duration(seconds: 30), (timer) {
+    print('Background: [v7] Sending BRIDGE PING to UI...');
+    service.invoke('onMessage', {'type': 'bridge_ping', 'timestamp': DateTime.now().toIso8601String()});
+  });
 
   MqttService? mqttService;
   bool isConnecting = false;
