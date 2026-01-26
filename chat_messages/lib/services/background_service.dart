@@ -15,7 +15,7 @@ Future<void> initializeService() async {
     'my_foreground_v3', 
     'System Service',
     description: 'Maintains the background chat connection.',
-    importance: Importance.max,
+    importance: Importance.none, // Try Importance.none for maximum silence
   );
 
   const AndroidNotificationChannel chatChannel = AndroidNotificationChannel(
@@ -39,10 +39,10 @@ Future<void> initializeService() async {
     androidConfiguration: AndroidConfiguration(
       onStart: onStart,
       autoStart: true,
-      isForegroundMode: false,
+      isForegroundMode: true,
       notificationChannelId: 'my_foreground_v3',
-      initialNotificationTitle: 'Chat Service Active',
-      initialNotificationContent: 'Monitoring for incoming messages',
+      initialNotificationTitle: null,
+      initialNotificationContent: null,
       foregroundServiceNotificationId: 888,
     ),
     iosConfiguration: IosConfiguration(

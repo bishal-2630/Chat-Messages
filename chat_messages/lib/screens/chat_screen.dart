@@ -70,6 +70,14 @@ class _ChatScreenState extends State<ChatScreen> {
               _messages[index]['is_read'] = true;
             }
           });
+        } else if (type == 'message_delivered') {
+          final deliveredId = data['message_id'];
+          setState(() {
+            final index = _messages.indexWhere((m) => m['id'] == deliveredId);
+            if (index != -1) {
+              _messages[index]['is_delivered'] = true;
+            }
+          });
         }
       }
     });
@@ -378,9 +386,9 @@ class _ChatScreenState extends State<ChatScreen> {
                               Padding(
                                 padding: const EdgeInsets.only(right: 12, bottom: 4),
                                 child: Icon(
-                                  isRead ? Icons.done_all : Icons.check,
+                                  isRead ? Icons.done_all : (msg['is_delivered'] == true ? Icons.done_all : Icons.check),
                                   size: 14,
-                                  color: isRead ? Colors.blue : Colors.grey,
+                                  color: isRead ? Colors.blue : (msg['is_delivered'] == true ? Colors.grey : Colors.grey.withOpacity(0.5)),
                                 ),
                               ),
                           ],
