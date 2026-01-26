@@ -1,0 +1,14 @@
+# Exclude large Flutter app folder
+chat_messages/
+
+# Exclude dev artifacts
+.git/
+.github/
+.vscode/
+.idea/
+build/
+venv/
+node_modules/
+
+# Exclude local database if it exists
+*.sqlite3
