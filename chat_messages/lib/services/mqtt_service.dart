@@ -34,7 +34,7 @@ class MqttService {
     client = MqttServerClient(broker, stableClientId);
     client.port = port;
     client.logging(on: true);
-    client.keepAlivePeriod = 30;
+    client.keepAlivePeriod = 15; // Detect connection loss much faster (15s instead of 30s)
     client.onDisconnected = onDisconnected;
     client.onConnected = onConnected;
     client.onSubscribed = onSubscribed;

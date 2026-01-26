@@ -117,8 +117,8 @@ void onStart(ServiceInstance service) async {
     print('Background service running...');
   });
 
-  // CONNECTION WATCHDOG: Check every 30s
-  Timer.periodic(const Duration(seconds: 30), (timer) async {
+  // CONNECTION WATCHDOG: Check every 10s (Faster response to network drops)
+  Timer.periodic(const Duration(seconds: 10), (timer) async {
     if (mqttService != null) {
       if (!mqttService!.isConnected) {
         print('Watchdog: MQTT disconnected. Attempting restart...');
