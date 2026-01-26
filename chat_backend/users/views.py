@@ -39,17 +39,25 @@ class MessageListCreateView(generics.ListCreateAPIView):
     permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
-        
-        other_user_id = self.request.query_params.get('user_id')
-        
-        if not other_user_id:
+        try:
+            other_user_id = self.request.query_params.get('user_id')
+            
+            if not other_user_id:
+                return Message.objects.none()
+            
+            return Message.objects.filter(
+                Q(sender=self.request.user, receiver_id=other_user_id) |
+                Q(receiver=self.request.user, sender_id=other_user_id)
+            ).order_by('timestamp')
+        except Exception as e:
+            # Re-raise for now if DEBUG is True, otherwise return helpful error
+            # This is specifically to help debug the 500 error shown in the UI
+            from django.conf import settings
+            if settings.DEBUG:
+                raise e
+            # Log the error here in a real app
+            print(f"Error in MessageListCreateView: {e}")
             return Message.objects.none()
-        
-        
-        return Message.objects.filter(
-            Q(sender=self.request.user, receiver_id=other_user_id) |
-            Q(receiver=self.request.user, sender_id=other_user_id)
-        ).order_by('timestamp')
 
     def perform_create(self, serializer):
         message = serializer.save(sender=self.request.user)

@@ -25,6 +25,7 @@ class _ChatScreenState extends State<ChatScreen> {
   int? _myId;
   String? _token;
   StreamSubscription? _mqttSubscription;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -103,6 +104,7 @@ class _ChatScreenState extends State<ChatScreen> {
         if (mounted) {
            setState(() {
             _isLoading = false;
+            _errorMessage = null;
             // Only scroll if message count increased
             if (newMessages.length > _messages.length) {
               _messages = newMessages;
@@ -112,10 +114,22 @@ class _ChatScreenState extends State<ChatScreen> {
             }
           });
         }
+      } else {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+            _errorMessage = 'Failed to load messages (Status: ${response.statusCode})';
+          });
+        }
       }
     } catch (e) {
       print('Error fetching history: $e');
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'Connection error: $e';
+        });
+      }
     }
   }
 
@@ -257,7 +271,27 @@ class _ChatScreenState extends State<ChatScreen> {
           Expanded(
             child: _isLoading 
               ? const Center(child: CircularProgressIndicator())
-              : ListView.builder(
+              : _errorMessage != null
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.error_outline, size: 48, color: Colors.red[300]),
+                        const SizedBox(height: 16),
+                        Text(
+                          _errorMessage!,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.grey[700]),
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: _fetchHistory,
+                          child: const Text('Retry'),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
                   controller: _scrollController,
                   itemCount: _messages.length,
                   itemBuilder: (context, index) {

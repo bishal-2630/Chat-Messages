@@ -7,7 +7,7 @@ class Profile(models.Model):
     is_online = models.BooleanField(default=False)
     last_seen = models.DateTimeField(null=True, blank=True)
 
-    def __cl__(self):
+    def __str__(self):
         return f'{self.user.username} Profile'
 
 class Message(models.Model):
