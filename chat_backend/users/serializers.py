@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import Profile, Message
+from django.db.models import Q
 
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -9,10 +10,32 @@ class ProfileSerializer(serializers.ModelSerializer):
 
 class UserListSerializer(serializers.ModelSerializer):
     profile = ProfileSerializer(read_only=True)
+    last_message = serializers.SerializerMethodField()
+    unread_count = serializers.SerializerMethodField()
     
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'profile']
+        fields = ['id', 'username', 'email', 'profile', 'last_message', 'unread_count']
+
+    def get_last_message(self, obj):
+        last_msg = Message.objects.filter(
+            (Q(sender=obj, receiver=self.context['request'].user) | 
+             Q(sender=self.context['request'].user, receiver=obj))
+        ).order_by('-timestamp').first()
+        
+        if last_msg:
+            return {
+                'content': last_msg.content,
+                'timestamp': last_msg.timestamp
+            }
+        return None
+
+    def get_unread_count(self, obj):
+        return Message.objects.filter(
+            sender=obj, 
+            receiver=self.context['request'].user, 
+            is_read=False
+        ).count()
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:

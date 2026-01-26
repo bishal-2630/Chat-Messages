@@ -130,6 +130,12 @@ void onStart(ServiceInstance service) async {
     service.stopSelf();
   });
 
+  service.on('setActiveChat').listen((event) {
+    final int? otherId = event?['userId'];
+    print('Background: Setting Active Chat to $otherId');
+    mqttService?.activeChatUserId = otherId;
+  });
+
   Timer.periodic(const Duration(minutes: 5), (timer) async {
     print('Background service Heartbeat: Active');
   });

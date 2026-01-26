@@ -24,6 +24,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     _loadCurrentUser();
     _fetchUsers();
+    _setupMessageListener();
   }
 
   @override
@@ -39,6 +40,35 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       FlutterBackgroundService().invoke('refresh');
       _fetchUsers(); // Also refresh user list
     }
+  }
+
+  void _setupMessageListener() {
+    FlutterBackgroundService().on('onMessage').listen((data) {
+      if (data == null) return;
+      final type = data['type'] ?? 'new_message';
+
+      if (type == 'new_message') {
+        final senderId = data['sender_id'];
+        final String content = data['content'] ?? "";
+        final String timestamp = data['timestamp'] ?? DateTime.now().toIso8601String();
+
+        if (mounted) {
+          setState(() {
+            final userIndex = _users.indexWhere((u) => u.id.toString() == senderId.toString());
+            if (userIndex != -1) {
+              final user = _users[userIndex];
+              user.lastMessage = content;
+              user.unreadCount++;
+              user.lastTimestamp = DateTime.parse(timestamp);
+              
+              // Move user to top (Messenger style reordering)
+              _users.removeAt(userIndex);
+              _users.insert(0, user);
+            }
+          });
+        }
+      }
+    });
   }
 
   Future<void> _loadCurrentUser() async {
@@ -185,11 +215,33 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                       ),
                       subtitle: Text(
-                        user.isOnline ? 'Active now' : 'Yesterday',
-                        style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                        user.lastMessage.isNotEmpty ? user.lastMessage : (user.isOnline ? 'Active now' : 'Yesterday'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: user.unreadCount > 0 ? Colors.black : Colors.grey.shade600,
+                          fontWeight: user.unreadCount > 0 ? FontWeight.bold : FontWeight.normal,
+                          fontSize: 13,
+                        ),
                       ),
-                      onTap: () {
-                        Navigator.push(
+                      trailing: user.unreadCount > 0 
+                        ? Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: const BoxDecoration(
+                              color: Colors.deepPurple,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Text(
+                              '${user.unreadCount}',
+                              style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                            ),
+                          )
+                        : null,
+                      onTap: () async {
+                        setState(() {
+                          user.unreadCount = 0; // Clear locally when entering
+                        });
+                        await Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => ChatScreen(
@@ -198,6 +250,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                             ),
                           ),
                         );
+                        _fetchUsers(); // Refresh on return to sync read state
                       },
                     );
                   },
@@ -212,14 +265,29 @@ class ChatUser {
   final int id;
   final String username;
   final bool isOnline;
+  String lastMessage;
+  int unreadCount;
+  DateTime? lastTimestamp;
 
-  ChatUser({required this.id, required this.username, required this.isOnline});
+  ChatUser({
+    required this.id, 
+    required this.username, 
+    required this.isOnline,
+    this.lastMessage = "",
+    this.unreadCount = 0,
+    this.lastTimestamp,
+  });
 
   factory ChatUser.fromJson(Map<String, dynamic> json) {
     return ChatUser(
       id: json['id'],
       username: json['username'],
       isOnline: json['profile']?['is_online'] ?? false,
+      lastMessage: json['last_message']?['content'] ?? "", // Assuming backend sends this (optional)
+      unreadCount: json['unread_count'] ?? 0,
+      lastTimestamp: json['last_message']?['timestamp'] != null 
+          ? DateTime.parse(json['last_message']['timestamp'])
+          : null,
     );
   }
 }

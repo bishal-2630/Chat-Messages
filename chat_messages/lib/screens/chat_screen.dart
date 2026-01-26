@@ -33,6 +33,9 @@ class _ChatScreenState extends State<ChatScreen> {
     super.initState();
     _loadSessionInfo();
     
+    // Notify background that we are in a chat to suppress notifications
+    FlutterBackgroundService().invoke('setActiveChat', {'userId': widget.otherUserId});
+
     // Listen for real-time messages via MQTT
     _mqttSubscription = FlutterBackgroundService().on('onMessage').listen((data) {
       print('UI Relay: onMessage received from background! Raw Data: ${jsonEncode(data)}');
@@ -95,6 +98,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void dispose() {
+    // Notify background we left the chat
+    FlutterBackgroundService().invoke('setActiveChat', {'userId': null});
     _mqttSubscription?.cancel();
     _controller.dispose();
     _scrollController.dispose();

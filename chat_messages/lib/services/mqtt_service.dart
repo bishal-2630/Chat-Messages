@@ -11,6 +11,7 @@ class MqttService {
   final String broker = 'broker.hivemq.com'; 
   final int port = 1883;
   int? _currentUserId; 
+  int? activeChatUserId; // Tracking which chat is currently open in UI
   final String topic = 'test/topic';
   ServiceInstance? _backgroundService;
   StreamSubscription? _updatesSubscription;
@@ -105,8 +106,13 @@ class MqttService {
             final String content = data['content'] ?? "";
             final int senderId = int.tryParse(data['sender_id'].toString()) ?? -1;
 
+            // Don't show notification if the chat is currently open in UI
+            if (activeChatUserId != null && senderId == activeChatUserId) {
+              print('MQTT: Skipping notification - Chat is currently open');
+              continue;
+            }
+
             // Don't show notification if I sent it myself
-            // Check for -1 to ensure we don't skip system messages (which might lack sender_id)
             if (_currentUserId != null && senderId != -1 && senderId == _currentUserId) {
               print('MQTT: Skipping notification for self-sent message');
               continue;
