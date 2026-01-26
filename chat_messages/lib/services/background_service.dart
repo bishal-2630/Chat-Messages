@@ -36,6 +36,7 @@ Future<void> initializeService() async {
   await androidPlugin?.createNotificationChannel(chatChannel);
 
   await service.configure(
+    androidConfiguration: AndroidConfiguration(
       onStart: onStart,
       autoStart: true,
       isForegroundMode: true,
