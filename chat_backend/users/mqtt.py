@@ -2,6 +2,7 @@ import paho.mqtt.publish as publish
 import json
 import uuid
 import threading
+import time
 
 BROKER = 'broker.hivemq.com'
 PORT = 1883
@@ -10,8 +11,9 @@ def _do_publish(topic, payload):
     """
     Synchronous inner function using the proven publish.single method.
     """
+    print(f"[MQTT-THREAD] Started for {topic} at {time.strftime('%H:%M:%S')}")
     try:
-        print(f"[MQTT-BACKEND v7] Attempting to publish to {topic} via HiveMQ...")
+        print(f"[MQTT-THREAD] Attempting publish.single to {topic}...")
         publish.single(
             topic, 
             payload=payload, 
@@ -19,9 +21,11 @@ def _do_publish(topic, payload):
             hostname=BROKER, 
             port=PORT
         )
-        print(f"[MQTT-BACKEND v7] SUCCESS: Delivered message to {topic}")
+        print(f"[MQTT-THREAD] SUCCESS for {topic} at {time.strftime('%H:%M:%S')}")
     except Exception as e:
-        print(f"[MQTT-BACKEND v7] FAILURE: Could not deliver to {topic}. Error: {str(e)}")
+        print(f"[MQTT-THREAD] ERROR for {topic}: {str(e)}")
+    finally:
+        print(f"[MQTT-THREAD] Finished/Exiting for {topic}")
 
 def publish_message(user_id, message_data):
     """
