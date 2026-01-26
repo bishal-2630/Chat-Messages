@@ -2,7 +2,7 @@ import sys
 import json
 import paho.mqtt.publish as publish
 
-BROKER = 'broker.emqx.io'
+BROKER = 'broker.hivemq.com'
 PORT = 1883
 
 if __name__ == "__main__":

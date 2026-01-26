@@ -9,17 +9,18 @@ CLIENT_ID = 'bishal_django_pub'
 
 def _do_publish(topic, payload, unique_id):
     try:
+        print(f"[MQTT-BACKEND v7] Attempting to publish to {topic}...")
         publish.single(
             topic, 
             payload=payload, 
             qos=1, 
             hostname=BROKER, 
             port=PORT, 
-            client_id=unique_id                                                                                                                            
+            client_id=unique_id
         )
-        print(f"[MQTT] SUCCESS: Delivered message to {topic}")
+        print(f"[MQTT-BACKEND v7] SUCCESS: Delivered message to {topic}")
     except Exception as e:
-        print(f"[MQTT] FAILURE: Could not deliver to {topic}. Error: {str(e)}")
+        print(f"[MQTT-BACKEND v7] FAILURE: Could not deliver to {topic}. Error: {str(e)}")
 
 def publish_message(user_id, message_data):
     """

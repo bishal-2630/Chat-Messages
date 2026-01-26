@@ -68,6 +68,7 @@ class MessageListCreateView(generics.ListCreateAPIView):
         message.save()
         
         # Publish to MQTT for offline notifications
+        print(f"[VIEWS v7] Triggering publish_message for receiver {message.receiver.id}")
         publish_message(message.receiver.id, {
             'type': 'new_message',
             'id': message.id,
