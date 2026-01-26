@@ -13,9 +13,9 @@ class MqttService {
   int? _currentUserId; 
   final String topic = 'test/topic';
   ServiceInstance? _backgroundService;
-  bool _isListenerAttached = false;
+  StreamSubscription? _updatesSubscription;
  
-  // For real-time UI updates
+  // For real-time UI updates (Isolate local)
   static final StreamController<Map<String, dynamic>> _messageStreamController = 
       StreamController<Map<String, dynamic>>.broadcast();
   static Stream<Map<String, dynamic>> get messageStream => _messageStreamController.stream;
@@ -26,7 +26,7 @@ class MqttService {
   Future<void> initialize(int userId, [ServiceInstance? service]) async {
     _currentUserId = userId;
     _backgroundService = service;
-    _isListenerAttached = false; // Reset on re-init
+    _updatesSubscription?.cancel(); // Clear any stale listeners
     // USE TRULY STABLE ID for session persistence
     final String stableClientId = 'bishal_user_client_$userId';
     
@@ -75,14 +75,10 @@ class MqttService {
   }
 
   void _setupUpdateListener(Stream<List<MqttReceivedMessage<MqttMessage?>>> updates) {
-    if (_isListenerAttached) {
-      print('MQTT: Listener already attached, skipping.');
-      return;
-    }
-    _isListenerAttached = true;
+    _updatesSubscription?.cancel(); // Ensure only one listener active
+    
     print('MQTT: Setting up Update Listener...'); 
-    // REMOVED TYPE ANNOTATION to avoid potential runtime cast errors
-    updates.listen((c) {
+    _updatesSubscription = updates.listen((c) {
       if (c == null || c.isEmpty) return;
       print('MQTT: --> Batch received. Count: ${c.length}');
 
@@ -96,7 +92,8 @@ class MqttService {
           final Map<String, dynamic> data = jsonDecode(payload);
           final String type = data['type'] ?? 'new_message';
 
-          // Always notify the UI via background service bridge
+          // Relay to main isolate
+          print('MQTT: Relaying to Main Isolate via background service bridge...');
           _backgroundService?.invoke('onMessage', data);
           _messageStreamController.add(data);
 
@@ -151,17 +148,16 @@ class MqttService {
 
   void onAutoReconnect() {
     print('MQTT: Auto-reconnecting...');
-    _isListenerAttached = false; // Allow re-attaching if stream changes
   }
 
   void disconnect() {
     client.disconnect();
-    _isListenerAttached = false;
+    _updatesSubscription?.cancel();
     print('MQTT: Disconnected manually');
   }
 
   void onDisconnected() {
     print('MQTT: Disconnected');
-    _isListenerAttached = false;
+    _updatesSubscription?.cancel();
   }
 }

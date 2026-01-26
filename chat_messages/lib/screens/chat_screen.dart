@@ -35,6 +35,7 @@ class _ChatScreenState extends State<ChatScreen> {
     
     // Listen for real-time messages via MQTT
     _mqttSubscription = FlutterBackgroundService().on('onMessage').listen((data) {
+      print('UI Relay: onMessage received from background! Data: $data');
       if (mounted && data != null) {
         final type = data['type'] ?? 'new_message';
 
