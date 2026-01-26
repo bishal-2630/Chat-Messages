@@ -35,7 +35,6 @@ class MqttService {
     client.onDisconnected = onDisconnected;
     client.onConnected = onConnected;
     client.onSubscribed = onSubscribed;
-    client.onSubscribed = onSubscribed;
     client.onAutoReconnect = onAutoReconnect; 
     client.autoReconnect = true; 
     client.resubscribeOnAutoReconnect = true;
@@ -135,6 +134,10 @@ class MqttService {
   }
 
   
+
+  void onAutoReconnect() {
+    print('MQTT: Auto-reconnecting...');
+  }
 
   void disconnect() {
     client.disconnect();
