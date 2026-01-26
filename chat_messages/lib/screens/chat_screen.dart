@@ -26,6 +26,7 @@ class _ChatScreenState extends State<ChatScreen> {
   String? _token;
   StreamSubscription? _mqttSubscription;
   String? _errorMessage;
+  bool _isSending = false;
 
   @override
   void initState() {
@@ -41,15 +42,19 @@ class _ChatScreenState extends State<ChatScreen> {
           final senderId = data['sender_id'];
           if (senderId != null && senderId.toString() == widget.otherUserId.toString()) {
             setState(() {
-              _messages.add({
-                'id': data['id'],
-                'sender': senderId,
-                'content': data['content'],
-                'timestamp': DateTime.now().toIso8601String(),
-                'is_read': false,
-                'is_delivered': true,
-              });
-              _scrollToBottom();
+              final messageId = data['id'];
+              // Deduplicate: Don't add if ID already exists
+              if (!_messages.any((m) => m['id'] == messageId)) {
+                _messages.add({
+                  'id': messageId,
+                  'sender': senderId,
+                  'content': data['content'],
+                  'timestamp': DateTime.now().toIso8601String(),
+                  'is_read': false,
+                  'is_delivered': true,
+                });
+                _scrollToBottom();
+              }
             });
           }
         } else if (type == 'message_deleted') {
@@ -147,7 +152,9 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _sendMessage() async {
     final text = _controller.text.trim();
-    if (text.isEmpty || _token == null) return;
+    if (text.isEmpty || _token == null || _isSending) return;
+
+    setState(() => _isSending = true);
 
     final messageData = {
       'receiver': widget.otherUserId,
@@ -177,6 +184,8 @@ class _ChatScreenState extends State<ChatScreen> {
       }
     } catch (e) {
       print('Send error: $e');
+    } finally {
+      if (mounted) setState(() => _isSending = false);
     }
   }
 
