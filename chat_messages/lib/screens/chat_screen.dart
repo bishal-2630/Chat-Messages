@@ -73,12 +73,13 @@ class _ChatScreenState extends State<ChatScreen> {
         } else if (type == 'message_delivered') {
           final deliveredId = data['message_id'];
           setState(() {
-            final index = _messages.indexWhere((m) => m['id'] == deliveredId);
+            final index = _messages.indexWhere((m) => m['id'].toString() == deliveredId.toString());
             if (index != -1) {
               _messages[index]['is_delivered'] = true;
             }
           });
         }
+        print('Chat: Processed MQTT $type for ID ${data['message_id'] ?? data['id']}');
       }
     });
   }

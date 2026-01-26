@@ -69,15 +69,24 @@ class MqttService {
       
       try {
         final Map<String, dynamic> data = jsonDecode(payload);
-        final String sender = data['sender'] ?? "New Message";
-        final String content = data['content'] ?? "";
+        final String type = data['type'] ?? 'new_message';
         
+        // Always notify the UI via background service bridge
         _backgroundService?.invoke('onMessage', data);
         _messageStreamController.add(data);
-        NotificationService.showNotification(sender, content);
+
+        // ONLY show physical system notification for new messages
+        if (type == 'new_message') {
+          final String sender = data['sender'] ?? "New Message";
+          final String content = data['content'] ?? "";
+          try {
+            NotificationService.showNotification(sender, content);
+          } catch (e) {
+            print('MQTT: Failed to show system notification: $e');
+          }
+        }
       } catch (e) {
-        print('MQTT: Error parsing payload - $e');
-        NotificationService.showNotification("New Message", payload);
+        print('MQTT: Error processing message - $e');
       }
     });
   }

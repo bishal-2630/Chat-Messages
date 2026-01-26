@@ -13,9 +13,9 @@ Future<void> initializeService() async {
 
   const AndroidNotificationChannel channel = AndroidNotificationChannel(
     'my_foreground_v3', 
-    'System Service',
-    description: 'Maintains the background chat connection.',
-    importance: Importance.min, // Low importance to keep it quiet and hidden from status bar
+    'System Connectivity',
+    description: 'Maintains system connectivity in background.',
+    importance: Importance.low,
   );
 
   const AndroidNotificationChannel chatChannel = AndroidNotificationChannel(
@@ -36,13 +36,12 @@ Future<void> initializeService() async {
   await androidPlugin?.createNotificationChannel(chatChannel);
 
   await service.configure(
-    androidConfiguration: AndroidConfiguration(
       onStart: onStart,
       autoStart: true,
       isForegroundMode: true,
       notificationChannelId: 'my_foreground_v3',
-      initialNotificationTitle: 'Chat Service',
-      initialNotificationContent: 'Monitoring messages',
+      initialNotificationTitle: 'System Connectivity',
+      initialNotificationContent: 'Active',
       foregroundServiceNotificationId: 888,
     ),
     iosConfiguration: IosConfiguration(
