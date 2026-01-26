@@ -2,7 +2,7 @@ import sys
 import json
 import paho.mqtt.publish as publish
 
-BROKER = 'broker.hivemq.com'
+BROKER = 'broker.emqx.io'
 PORT = 1883
 
 if __name__ == "__main__":
@@ -12,12 +12,14 @@ if __name__ == "__main__":
     
     user_id = sys.argv[1]
     topic = f'bishal_chat/user/{user_id}'
+    # topic = 'bishal_chat/global_test'
     
     data = {
         'type': 'new_message',
         'sender': 'System Test',
         'content': 'This is a test notification from Vercel!',
-        'timestamp': 'now'
+        'timestamp': 'now',
+        'sender_id': 9999
     }
     
     print(f"Triggering SYNC notification for User {user_id} on {topic}...")
@@ -27,7 +29,7 @@ if __name__ == "__main__":
             payload=json.dumps(data), 
             hostname=BROKER, 
             port=PORT,
-            qos=1
+            qos=0
         )
         print("[MQTT] SUCCESS! Message delivered to broker.")
         print("Done. Check the logs and your phone.")

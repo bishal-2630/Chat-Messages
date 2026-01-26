@@ -69,6 +69,7 @@ void onStart(ServiceInstance service) async {
   DartPluginRegistrant.ensureInitialized();
   try {
     await NotificationService.initialize();
+    print('Background service: NotificationService initialized successfully');
   } catch (e) {
     print('Background service: Notification initialization failed: $e');
   }

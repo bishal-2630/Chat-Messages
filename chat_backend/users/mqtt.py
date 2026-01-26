@@ -3,7 +3,7 @@ import json
 import uuid
 import threading
 
-BROKER = 'broker.hivemq.com'
+BROKER = 'broker.emqx.io'
 PORT = 1883
 CLIENT_ID = 'django_backend_publisher'
 

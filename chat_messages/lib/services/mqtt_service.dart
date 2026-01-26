@@ -8,7 +8,7 @@ import 'notification_service.dart';
 
 class MqttService {
   late MqttServerClient client;
-  final String broker = 'broker.hivemq.com'; // Switching to HiveMQ for reliability
+  final String broker = 'broker.emqx.io'; // Switching to EMQX for better stability
   final int port = 1883;
   int? _currentUserId; 
   final String topic = 'test/topic';
@@ -31,26 +31,28 @@ class MqttService {
     client = MqttServerClient(broker, stableClientId);
     client.port = port;
     client.logging(on: true);
-    client.keepAlivePeriod = 30; // Faster failure detection
+    client.keepAlivePeriod = 30;
     client.onDisconnected = onDisconnected;
     client.onConnected = onConnected;
     client.onSubscribed = onSubscribed;
-    client.onAutoReconnect = onAutoReconnect; // New callback
-    client.autoReconnect = true;
+    client.onSubscribed = onSubscribed;
+    client.onAutoReconnect = onAutoReconnect; 
+    client.autoReconnect = true; 
     client.resubscribeOnAutoReconnect = true;
     client.setProtocolV311();
 
     final connMess = MqttConnectMessage()
         .withClientIdentifier(stableClientId)
         .startClean() 
-        .withWillQos(MqttQos.atMostOnce);
+        .withWillQos(MqttQos.atMostOnce); // QoS 0
     client.connectionMessage = connMess;
 
     print('MQTT: Initialization result - User: $userId, CID: $stableClientId');
     // Attach listener BEFORE connecting to catch early events
-    if (client.updates != null) {
-      _setupUpdateListener(client.updates!);
-    }
+    // Listener moved to onConnected to ensure stream is ready
+    // if (client.updates != null) {
+    //   _setupUpdateListener(client.updates!);
+    // }
 
     Future<void> doConnect() async {
       try {
@@ -66,41 +68,51 @@ class MqttService {
   }
 
   void _setupUpdateListener(Stream<List<MqttReceivedMessage<MqttMessage?>>> updates) {
-    updates.listen((List<MqttReceivedMessage<MqttMessage?>>? c) {
-      print('MQTT: --> UPDATE RECEIVED! Item count: ${c?.length}');
+    print('MQTT: Setting up Update Listener...'); 
+    // REMOVED TYPE ANNOTATION to avoid potential runtime cast errors
+    updates.listen((c) {
       if (c == null || c.isEmpty) return;
-      
-      final recMess = c[0].payload as MqttPublishMessage;
-      final payload = MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
-      
-      try {
-        final Map<String, dynamic> data = jsonDecode(payload);
-        final String type = data['type'] ?? 'new_message';
-        print('MQTT: Decoded Type: $type');
-        
-        // Always notify the UI via background service bridge
-        _backgroundService?.invoke('onMessage', data);
-        _messageStreamController.add(data);
+      print('MQTT: --> Batch received. Count: ${c.length}');
 
-        // ONLY show physical system notification for new messages
-        if (type == 'new_message') {
-          final String sender = data['sender'] ?? "New Message";
-          final String content = data['content'] ?? "";
-          print('MQTT: Triggering System Alert for $sender');
-          try {
-            NotificationService.showNotification(sender, content);
-          } catch (e) {
-            print('MQTT: FAILED to show system notification: $e');
+      // Iterate through ALL messages in the batch
+      for (final message in c) {
+        final recMess = message.payload as MqttPublishMessage;
+        final payload = MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
+
+        try {
+          print('MQTT: Raw Payload: $payload');
+          final Map<String, dynamic> data = jsonDecode(payload);
+          final String type = data['type'] ?? 'new_message';
+
+          // Always notify the UI via background service bridge
+          _backgroundService?.invoke('onMessage', data);
+          _messageStreamController.add(data);
+
+          // ONLY show physical system notification for new messages
+          if (type == 'new_message') {
+            final String sender = data['sender'] ?? "New Message";
+            final String content = data['content'] ?? "";
+            final int senderId = int.tryParse(data['sender_id'].toString()) ?? -1;
+
+            // Don't show notification if I sent it myself
+            // Check for -1 to ensure we don't skip system messages (which might lack sender_id)
+            if (_currentUserId != null && senderId != -1 && senderId == _currentUserId) {
+              print('MQTT: Skipping notification for self-sent message');
+              continue;
+            }
+
+            print('MQTT: Triggering System Alert for $sender');
+            try {
+              NotificationService.showNotification(sender, content);
+            } catch (e) {
+              print('MQTT: FAILED to show system notification: $e');
+            }
           }
+        } catch (e) {
+          print('MQTT: CRITICAL JSON parsing error: $e. Payload was: $payload');
         }
-      } catch (e) {
-        print('MQTT: CRITICAL JSON parsing error: $e. Payload was: $payload');
       }
     });
-  }
-
-  void onAutoReconnect() {
-    print('MQTT: Auto-reconnecting...');
   }
 
   void onConnected() {
@@ -110,6 +122,11 @@ class MqttService {
       final String userTopic = 'bishal_chat/user/$_currentUserId';
       client.subscribe(userTopic, MqttQos.atMostOnce);
       print('MQTT: Subscribed to $userTopic');
+    }
+    
+    // SETUP LISTENER HERE (Try connecting listener after connection)
+    if (client.updates != null) {
+      _setupUpdateListener(client.updates!);
     }
   }
 
