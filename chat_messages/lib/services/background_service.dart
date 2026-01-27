@@ -101,7 +101,9 @@ void onStart(ServiceInstance service) async {
         print('Background Isolate: [v7] Starting MQTT for user $userId (Synced)');
         mqttService?.disconnect(); // Disconnect existing if any
         mqttService = MqttService();
+        print('Background Isolate: [v7] Calling mqttService.initialize...');
         await mqttService!.initialize(userId, service);
+        print('Background Isolate: [v7] mqttService.initialize COMPLETED.');
       } else {
         print('Background: No User ID found, cannot start MQTT.');
       }
@@ -109,6 +111,7 @@ void onStart(ServiceInstance service) async {
       print('Background: CRITICAL error in startMqtt: $e');
     } finally {
       isConnecting = false;
+      print('Background: [v7] startMqtt finished (isConnecting=false).');
     }
   }
 

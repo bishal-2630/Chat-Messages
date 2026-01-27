@@ -4,7 +4,7 @@ import uuid
 import threading
 import time
 
-BROKER = 'broker.hivemq.com'
+BROKER = 'broker.emqx.io'
 PORT = 1883
 
 def _do_publish(topic, payload):

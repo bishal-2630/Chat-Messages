@@ -8,7 +8,7 @@ import 'notification_service.dart';
 
 class MqttService {
   late MqttServerClient client;
-  final String broker = 'broker.hivemq.com'; 
+  final String broker = 'broker.emqx.io'; 
   final int port = 1883;
   int? _currentUserId; 
   int? activeChatUserId; // Tracking which chat is currently open in UI
@@ -29,19 +29,21 @@ class MqttService {
     _backgroundService = service;
     _updatesSubscription?.cancel(); // Clear any stale listeners
     // USE TRULY STABLE ID for session persistence
-    // Use a MORE unique ID to avoid collisions on public brokers
-    final String randomSuffix = DateTime.now().millisecondsSinceEpoch.toString().substring(7);
-    final String stableClientId = 'bishal_flutter_${userId}_$randomSuffix';
+    // REMOVED random suffix to ensure we rejoin the same session if possible, 
+    // or at least don't spawn infinite sessions on the broker.
+    final String stableClientId = 'bishal_flutter_${userId}_bg_v7';
     
     print('MQTT: [v7] Initializing with STABLE CID: $stableClientId');
     
     client = MqttServerClient(broker, stableClientId);
     client.port = port;
     client.logging(on: true);
-    client.keepAlivePeriod = 60; // Longer keep-alive for background stability
+    client.keepAlivePeriod = 60; 
+    client.connectTimeoutPeriod = 5000; // 5s timeout
     client.onDisconnected = onDisconnected;
     client.onConnected = onConnected;
     client.onSubscribed = onSubscribed;
+    client.pongCallback = pong; // Add Pong callback
     client.onAutoReconnect = onAutoReconnect; 
     client.autoReconnect = true; 
     client.resubscribeOnAutoReconnect = true;
@@ -49,7 +51,7 @@ class MqttService {
 
     final connMess = MqttConnectMessage()
         .withClientIdentifier(stableClientId)
-        .startClean(); 
+        .startClean(); // Keep clean start for now to avoid state complexity on public broker
     
     client.connectionMessage = connMess;
 
@@ -62,11 +64,14 @@ class MqttService {
       while (attempts < maxAttempts && !isConnected) {
         try {
           attempts++;
-          print('MQTT: Connection attempt $attempts of $maxAttempts to $broker...');
+          print('MQTT: [v7] Connection attempt $attempts of $maxAttempts to $broker...');
           await client.connect();
-          if (isConnected) break;
+          if (isConnected) {
+            print('MQTT: [v7] Connection Successful!');
+            break;
+          }
         } catch (e) {
-          print('MQTT: Connection attempt $attempts failed: $e');
+          print('MQTT: [v7] Connection attempt $attempts failed: $e');
           if (attempts < maxAttempts) {
             await Future.delayed(Duration(seconds: 2 * attempts));
           }
@@ -162,6 +167,10 @@ class MqttService {
     client.disconnect();
     _updatesSubscription?.cancel();
     print('MQTT: Disconnected manually');
+  }
+
+  void pong() {
+    print('MQTT: [v7] Ping Response received (Pong)');
   }
 
   void onDisconnected() {
