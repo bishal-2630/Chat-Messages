@@ -38,8 +38,22 @@ class _ChatScreenState extends State<ChatScreen> {
 
     // Listen for real-time messages via MQTT
     // SINGLE SOURCE OF TRUTH: 'onMessage'
-    _mqttSubscription = FlutterBackgroundService().on('onMessage').listen((data) {
-      if (data == null) return;
+    _mqttSubscription = FlutterBackgroundService().on('onMessage').listen((eventData) {
+      if (eventData == null) return;
+
+      Map<String, dynamic> data = {};
+
+      if (eventData['type'] == 'raw_json') {
+          try {
+            data = jsonDecode(eventData['payload']);
+            print('🚨 BRIDGE: [v7 UI] Decoded RAW JSON: ${eventData['payload']}');
+          } catch (e) {
+            print('🚨 BRIDGE: [v7 UI] JSON Decode Error: $e');
+            return;
+          }
+      } else {
+        data = Map<String, dynamic>.from(eventData);
+      }
 
       final type = data['type'] ?? 'new_message';
 
@@ -56,6 +70,10 @@ class _ChatScreenState extends State<ChatScreen> {
           // print('🚨 BRIDGE: Msg from $senderId. Target: ${widget.otherUserId}');
           
           if (senderId != null && senderId.toString() == widget.otherUserId.toString()) {
+             // MARK AS READ IMMEDIATELY if we are viewing this chat
+             // We don't have _markAsRead defined/accessible here easily without more context,
+             // but we can add the message to the UI first.
+             
             setState(() {
               final messageId = data['id'];
               // Deduplicate
@@ -67,7 +85,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   'sender': senderId,
                   'content': data['content'],
                   'timestamp': data['timestamp'] ?? DateTime.now().toIso8601String(),
-                  'is_read': false,
+                  'is_read': false, 
                   'is_delivered': true,
                 });
                 _scrollToBottom();

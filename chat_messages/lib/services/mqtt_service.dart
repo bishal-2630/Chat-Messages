@@ -102,9 +102,14 @@ class MqttService {
 
           // --- 1. RELAY TO UI ISOLATE (ALWAYS DO THIS FIRST) ---
           print('MQTT: [v7] Relaying to UI Isolate via bridge...');
-          // Reverting to 'onMessage' as it is PROVEN to work for pings. 
-          // 'mqtt_message' event might be filtered or not registered correctly in plugin.
-          _backgroundService?.invoke('onMessage', data);
+          // Serialize to String to avoid Map type issues across Isolate Bridge
+          try {
+            final String rawJson = jsonEncode(data);
+            _backgroundService?.invoke('onMessage', {'type': 'raw_json', 'payload': rawJson});
+            print('MQTT: [v7] Relay invoke called using raw_json method');
+          } catch (e) {
+            print('MQTT: [v7] Relay FAILED: $e');
+          }
           _messageStreamController.add(data);
 
           // --- 2. SYSTEM NOTIFICATION LOGIC (CONDITIONAL) ---
