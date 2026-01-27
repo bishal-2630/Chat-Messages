@@ -37,31 +37,31 @@ class _ChatScreenState extends State<ChatScreen> {
     FlutterBackgroundService().invoke('setActiveChat', {'userId': widget.otherUserId});
 
     // Listen for real-time messages via MQTT
-    // LEGACY: Listen to 'onMessage' for ping
-    FlutterBackgroundService().on('onMessage').listen((data) {
-      if (data != null && data['type'] == 'bridge_ping') {
-        print('🚨 BRIDGE: [v7 UI] Heartbeat/Ping received from background isolate! Bridge is ALIVE.');
+    // SINGLE SOURCE OF TRUTH: 'onMessage'
+    _mqttSubscription = FlutterBackgroundService().on('onMessage').listen((data) {
+      if (data == null) return;
+
+      final type = data['type'] ?? 'new_message';
+
+      if (type == 'bridge_ping') {
+         // Keep ping logs minimal to avoid noise
+         // print('🚨 BRIDGE: [v7 UI] Heartbeat/Ping received.');
+      } else {
+         print('🚨 BRIDGE: [v7 UI] Data received: ${jsonEncode(data)}');
       }
-    });
 
-    // NEW: Listen to 'mqtt_message' for actual chat data
-    _mqttSubscription = FlutterBackgroundService().on('mqtt_message').listen((data) {
-      print('🚨 BRIDGE: [v7 UI] MQTT MESSAGE arrived! Data: ${jsonEncode(data)}');
-      if (mounted && data != null) {
-        final type = data['type'] ?? 'new_message';
-
+      if (mounted) {
         if (type == 'new_message') {
           final senderId = data['sender_id'];
-          print('🚨 BRIDGE: [v7 UI] New message from $senderId. Target is: ${widget.otherUserId}');
+          // print('🚨 BRIDGE: Msg from $senderId. Target: ${widget.otherUserId}');
           
           if (senderId != null && senderId.toString() == widget.otherUserId.toString()) {
-            print('🚨 BRIDGE: [v7 UI] SENDER MATCH! Updating state...');
             setState(() {
               final messageId = data['id'];
-              // Deduplicate: Don't add if ID already exists
+              // Deduplicate
               bool exists = _messages.any((m) => m['id'].toString() == messageId.toString());
               if (!exists) {
-                print('🚨 BRIDGE: [v7 UI] Inserting message $messageId into list');
+                print('🚨 BRIDGE: [v7 UI] Adding message $messageId to LIST');
                 _messages.add({
                   'id': messageId,
                   'sender': senderId,
@@ -71,22 +71,16 @@ class _ChatScreenState extends State<ChatScreen> {
                   'is_delivered': true,
                 });
                 _scrollToBottom();
-              } else {
-                print('🚨 BRIDGE: [v7 UI] Duplicate ID $messageId found, skipping');
               }
             });
-          } else {
-            print('🚨 BRIDGE: [v7 UI] SENDER MISMATCH. Ignoring bubble.');
           }
         } else if (type == 'message_deleted') {
           final deletedId = data['message_id'];
-          print('UI Relay: Processing message_deleted for ID: $deletedId');
           setState(() {
             _messages.removeWhere((m) => m['id'].toString() == deletedId.toString());
           });
         } else if (type == 'message_read') {
           final readId = data['message_id'];
-          print('UI Relay: Processing message_read for ID: $readId');
           setState(() {
             final index = _messages.indexWhere((m) => m['id'].toString() == readId.toString());
             if (index != -1) {
@@ -95,7 +89,6 @@ class _ChatScreenState extends State<ChatScreen> {
           });
         } else if (type == 'message_delivered') {
           final deliveredId = data['message_id'];
-          print('UI Relay: Processing message_delivered for ID: $deliveredId');
           setState(() {
             final index = _messages.indexWhere((m) => m['id'].toString() == deliveredId.toString());
             if (index != -1) {
@@ -103,7 +96,6 @@ class _ChatScreenState extends State<ChatScreen> {
             }
           });
         }
-        print('Chat: Successfully processed MQTT $type update.');
       }
     });
 
