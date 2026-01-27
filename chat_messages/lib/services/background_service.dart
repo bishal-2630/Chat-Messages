@@ -15,7 +15,7 @@ Future<void> initializeService() async {
     'System Connectivity v5', 
     'System Connectivity',
     description: 'Maintains background system connectivity.',
-    importance: Importance.low, 
+    importance: Importance.min, // Min importance to hide icon from status bar
   );
 
   const AndroidNotificationChannel chatChannel = AndroidNotificationChannel(

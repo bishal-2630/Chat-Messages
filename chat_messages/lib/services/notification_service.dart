@@ -6,7 +6,10 @@ class NotificationService {
   static final FlutterLocalNotificationsPlugin _notificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
-  static Future<void> initialize({bool isBackground = false}) async {
+  static Future<void> initialize({
+    bool isBackground = false,
+    void Function(NotificationResponse)? onDidReceiveNotificationResponse,
+  }) async {
     print('NotificationService: Starting initialization (isBackground: $isBackground)...');
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -16,7 +19,10 @@ class NotificationService {
     );
 
     try {
-      await _notificationsPlugin.initialize(initializationSettings);
+      await _notificationsPlugin.initialize(
+        initializationSettings,
+        onDidReceiveNotificationResponse: onDidReceiveNotificationResponse,
+      );
       
       // Permission requests MUST happen on the UI isolate (Activity context)
       if (!isBackground) {
@@ -35,7 +41,7 @@ class NotificationService {
     }
   }
 
-  static Future<void> showNotification(String title, String body) async {
+  static Future<void> showNotification(String title, String body, {String? payload}) async {
     final AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
       'chat_messages_v6',
@@ -56,17 +62,18 @@ class NotificationService {
     // Unique ID based on timestamp to avoid overwriting previous notifications
     int id = DateTime.now().millisecondsSinceEpoch.remainder(100000);
     
-    print('NotificationService: ATTEMPTING to show notification: id=$id, title=$title');
+    print('NotificationService: ATTEMPTING to show notification: id=$id, title=$title, payload=$payload');
     try {
       await _notificationsPlugin.show(
         id,
         title,
         body,
         platformChannelSpecifics,
+        payload: payload,
       );
       print('NotificationService: PLUGIN.SHOW() call completed successfully');
     } catch (e) {
-      print('NotificationService: PLUGIN.SHOW() FAILED: $e');
+       print('NotificationService: ERROR showing notification: $e');
     }
   }
 }

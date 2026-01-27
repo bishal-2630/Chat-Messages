@@ -1,18 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'dart:convert';
 import 'services/background_service.dart';
+import 'services/notification_service.dart'; 
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/chat_screen.dart';
 import 'screens/home_screen.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   if (!kIsWeb) {
     try {
+      // Initialize Notifications for FOREGROUND interaction (Click handling)
+      await NotificationService.initialize(
+        onDidReceiveNotificationResponse: (NotificationResponse response) {
+          final String? payload = response.payload;
+          if (payload != null) {
+            print('Main: Notification clicked with payload: $payload');
+            try {
+              final data = jsonDecode(payload);
+              final int senderId = data['sender_id'];
+              final String username = data['username'];
+              
+              navigatorKey.currentState?.push(
+                MaterialPageRoute(
+                  builder: (context) => ChatScreen(
+                    otherUserId: senderId,
+                    otherUsername: username,
+                  ),
+                ),
+              );
+            } catch (e) {
+              print('Main: Error parsing notification payload: $e');
+            }
+          }
+        },
+      );
+
       // Request notification permission for Android 13+
       await Permission.notification.request();
       await initializeService();
@@ -36,6 +67,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey, // Enable navigation from outside contexts
       debugShowCheckedModeBanner: false,
       title: 'Chat Messages',
       theme: ThemeData(

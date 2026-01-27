@@ -43,8 +43,23 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   void _setupMessageListener() {
-    FlutterBackgroundService().on('onMessage').listen((data) {
-      if (data == null) return;
+    FlutterBackgroundService().on('onMessage').listen((eventData) {
+      if (eventData == null) return;
+
+      Map<String, dynamic> data = {};
+
+      if (eventData['type'] == 'raw_json') {
+          try {
+            data = jsonDecode(eventData['payload']);
+            // print('UI: HomeScreen decoded RAW JSON');
+          } catch (e) {
+            print('UI: HomeScreen JSON Decode Error: $e');
+            return;
+          }
+      } else {
+        data = Map<String, dynamic>.from(eventData);
+      }
+
       final type = data['type'] ?? 'new_message';
 
       if (type == 'new_message') {

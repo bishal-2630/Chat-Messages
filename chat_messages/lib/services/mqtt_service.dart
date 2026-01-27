@@ -132,7 +132,11 @@ class MqttService {
 
             print('MQTT: [v7] Triggering System Notification for $sender');
             try {
-              NotificationService.showNotification(sender, content);
+              final String payload = jsonEncode({
+                'sender_id': senderId,
+                'username': sender,
+              });
+              NotificationService.showNotification(sender, content, payload: payload);
             } catch (e) {
               print('MQTT: [v7] FAILED to show notification: $e');
             }
