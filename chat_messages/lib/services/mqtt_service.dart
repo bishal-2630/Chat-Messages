@@ -102,7 +102,14 @@ class MqttService {
 
           // --- 1. RELAY TO UI ISOLATE (ALWAYS DO THIS FIRST) ---
           print('MQTT: [v7] Relaying to UI Isolate via bridge...');
-          _backgroundService?.invoke('onMessage', data);
+          try {
+             // Explicit cast to ensure it's a clean Map
+             final Map<String, dynamic> cleanData = Map<String, dynamic>.from(data);
+             _backgroundService?.invoke('mqtt_message', cleanData);
+             print('MQTT: [v7] Relay invoke called for mqtt_message');
+          } catch (e) {
+             print('MQTT: [v7] BRIDGE INVOKE FAILED: $e');
+          }
           _messageStreamController.add(data);
 
           // --- 2. SYSTEM NOTIFICATION LOGIC (CONDITIONAL) ---

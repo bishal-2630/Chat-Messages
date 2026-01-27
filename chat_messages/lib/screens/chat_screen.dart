@@ -37,14 +37,20 @@ class _ChatScreenState extends State<ChatScreen> {
     FlutterBackgroundService().invoke('setActiveChat', {'userId': widget.otherUserId});
 
     // Listen for real-time messages via MQTT
-    _mqttSubscription = FlutterBackgroundService().on('onMessage').listen((data) {
-      print('🚨 BRIDGE: [v7 UI] onMessage arrived from background! Data: ${jsonEncode(data)}');
+    // LEGACY: Listen to 'onMessage' for ping
+    FlutterBackgroundService().on('onMessage').listen((data) {
+      if (data != null && data['type'] == 'bridge_ping') {
+        print('🚨 BRIDGE: [v7 UI] Heartbeat/Ping received from background isolate! Bridge is ALIVE.');
+      }
+    });
+
+    // NEW: Listen to 'mqtt_message' for actual chat data
+    _mqttSubscription = FlutterBackgroundService().on('mqtt_message').listen((data) {
+      print('🚨 BRIDGE: [v7 UI] MQTT MESSAGE arrived! Data: ${jsonEncode(data)}');
       if (mounted && data != null) {
         final type = data['type'] ?? 'new_message';
 
-        if (type == 'bridge_ping') {
-          print('🚨 BRIDGE: [v7 UI] Heartbeat/Ping received from background isolate! Bridge is ALIVE.');
-        } else if (type == 'new_message') {
+        if (type == 'new_message') {
           final senderId = data['sender_id'];
           print('🚨 BRIDGE: [v7 UI] New message from $senderId. Target is: ${widget.otherUserId}');
           
@@ -98,6 +104,15 @@ class _ChatScreenState extends State<ChatScreen> {
           });
         }
         print('Chat: Successfully processed MQTT $type update.');
+      }
+    });
+
+    // Check UI Liveness periodically
+    Timer.periodic(const Duration(seconds: 5), (timer) {
+      if (mounted) {
+        // print('UI: ChatScreen is ALIVE and MOUNTED. Listening for messages...');
+      } else {
+        timer.cancel();
       }
     });
   }
