@@ -36,9 +36,6 @@ def publish_message(user_id, message_data):
     
     print(f"[MQTT-BACKEND v7] Spawning background thread for {topic}...")
     
-    # Run in background thread so Django doesn't wait for network
-    threading.Thread(
-        target=_do_publish, 
-        args=(topic, payload), 
-        daemon=True
-    ).start()
+    # Run SYNCHRONOUSLY to prevent Vercel from killing the thread prematurely
+    # This adds ~50-200ms latency to the request, but ensures delivery.
+    _do_publish(topic, payload)
