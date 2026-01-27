@@ -62,9 +62,9 @@ Future<bool> onIosBackground(ServiceInstance service) async {
 
 @pragma('vm:entry-point')
 void onStart(ServiceInstance service) async {
-  if (service is AndroidServiceInstance) {
-    service.setAsForegroundService();
-  }
+  // if (service is AndroidServiceInstance) {
+  //   service.setAsForegroundService(); // REMOVED to allow background mode
+  // }
   
   print('Background service: [onStart v7] triggered');
   WakelockPlus.enable();
