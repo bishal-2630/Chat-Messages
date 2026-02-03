@@ -81,6 +81,24 @@ paths:
               schema:
                 $ref: '#/components/schemas/Message'
           description: ''
+      callbacks:
+        new_message_notification:
+          'mqtt://broker.hivemq.com/chat/user/{receiver_id}':
+            post:
+              summary: Real-time notification sent to receiver
+              description: Sent via MQTT when a new message is created
+              requestBody:
+                content:
+                  application/json:
+                    schema:
+                      type: object
+                      properties:
+                        type: {type: string, example: "new_message"}
+                        id: {type: integer, example: 123}
+                        sender_id: {type: integer, example: 1}
+                        sender: {type: string, example: "john_doe"}
+                        content: {type: string, example: "Hello!"}
+                        timestamp: {type: string, format: date-time}
   /api/messages/{id}/delete/:
     delete:
       operationId: messages_delete_destroy
@@ -98,6 +116,19 @@ paths:
       responses:
         '204':
           description: No response body
+      callbacks:
+        message_deleted_notification:
+          'mqtt://broker.hivemq.com/chat/user/{receiver_id}':
+            post:
+              summary: Notification sent to receiver when a message is deleted
+              requestBody:
+                content:
+                  application/json:
+                    schema:
+                      type: object
+                      properties:
+                        type: {type: string, example: "message_deleted"}
+                        message_id: {type: integer, example: 123}
   /api/messages/{id}/read/:
     put:
       operationId: messages_read_update
