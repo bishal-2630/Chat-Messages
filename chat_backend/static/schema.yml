@@ -87,6 +87,12 @@ paths:
             post:
               summary: Real-time notification sent to receiver
               description: Sent via MQTT when a new message is created
+              parameters:
+              - name: receiver_id
+                in: path
+                required: true
+                schema:
+                  type: integer
               requestBody:
                 content:
                   application/json:
@@ -121,6 +127,12 @@ paths:
           'mqtt://broker.hivemq.com/chat/user/{receiver_id}':
             post:
               summary: Notification sent to receiver when a message is deleted
+              parameters:
+              - name: receiver_id
+                in: path
+                required: true
+                schema:
+                  type: integer
               requestBody:
                 content:
                   application/json:
