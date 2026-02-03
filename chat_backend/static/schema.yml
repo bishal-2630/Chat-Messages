@@ -269,6 +269,39 @@ paths:
                 items:
                   $ref: '#/components/schemas/UserList'
           description: ''
+  /api/test-mqtt/:
+    post:
+      operationId: test_mqtt_create
+      summary: "DEVELOPER TOOL: Send a test MQTT message"
+      description: "Triggers a real-time MQTT notification to the specified user for testing. No token required."
+      tags:
+      - "Testing"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_id:
+                  type: integer
+                  description: "ID of the user to notify"
+                message:
+                  type: string
+                  description: "Custom message text"
+              required:
+              - user_id
+        required: true
+      responses:
+        '200':
+          description: "MQTT message triggered successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: {type: string}
+                  message: {type: string}
+                  topic: {type: string}
 components:
   schemas:
     AuthToken:

@@ -145,3 +145,27 @@ class DebugStateView(APIView):
             status['error'] = str(e)
             
         return Response(status)
+class TestMQTTView(APIView):
+    permission_classes = (AllowAny,) # Allow testing without token for convenience
+
+    def post(self, request):
+        user_id = request.data.get('user_id')
+        message_text = request.data.get('message', 'Test message from Swagger')
+        
+        if not user_id:
+            return Response({'error': 'user_id is required'}, status=400)
+            
+        publish_message(user_id, {
+            'type': 'new_message',
+            'id': 0,
+            'sender_id': 0,
+            'sender': 'System Test',
+            'content': message_text,
+            'timestamp': str(connection.cursor().connection.timestamp() if hasattr(connection.cursor().connection, 'timestamp') else 'now')
+        })
+        
+        return Response({
+            'status': 'success',
+            'message': f'MQTT message sent to user {user_id}',
+            'topic': f'chat/user/{user_id}'
+        })
