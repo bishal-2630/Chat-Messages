@@ -211,9 +211,12 @@ paths:
     post:
       operationId: mqtt_service_create
       summary: "MQTT SERVICE: Test real-time messaging"
-      description: "Triggers a real-time MQTT notification. Use this to see the exact topic and payload format."
+      description: "Triggers a real-time MQTT notification. Requires authentication to show your actual sender_id."
       tags:
       - "Real-time Service"
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
       requestBody:
         content:
           application/json:

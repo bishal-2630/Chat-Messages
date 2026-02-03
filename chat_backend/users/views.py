@@ -78,8 +78,9 @@ class MessageListCreateView(generics.ListCreateAPIView):
 class MQTTSendView(APIView):
     """
     Dedicated endpoint to test MQTT service and see the exact message format.
+    Requires authentication to use the sender's actual details.
     """
-    permission_classes = (AllowAny,)
+    permission_classes = (IsAuthenticated,)
 
     def post(self, request):
         receiver_id = request.data.get('receiver_id')
@@ -91,8 +92,8 @@ class MQTTSendView(APIView):
         mqtt_payload = {
             'type': 'new_message',
             'id': 0, # Test ID
-            'sender_id': 0, # system ID
-            'sender': 'MQTT_SERVICE_TEST',
+            'sender_id': request.user.id,
+            'sender': request.user.username,
             'content': content,
             'timestamp': '2026-02-03T07:44:00Z' # Fixed example timestamp
         }
