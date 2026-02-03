@@ -6,12 +6,17 @@ from django.views.generic import TemplateView
 from django.conf import settings
 from django.conf.urls.static import static
 
-from drf_spectacular.views import SpectacularAPIView
+from rest_framework.schemas import get_schema_view
 
 urlpatterns = [
     path('api/', include('users.urls')),
-    # Only keep the lightweight schema endpoint for Vercel
-    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    # Use built-in DRF schema - lightweight and Vercel-compatible
+    path('api/schema/', get_schema_view(
+        title="Chat App API",
+        description="API documentation for the Chat App",
+        version="1.0.0",
+        public=True,
+    ), name='openapi-schema'),
 ]
 
 # Serve Flutter web app for all other routes (SPA routing)

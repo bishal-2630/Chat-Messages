@@ -29,7 +29,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
-    'drf_spectacular',
+    # 'drf_spectacular',  # Removed - not compatible with Vercel serverless
     'users',
 ]
 
@@ -72,22 +72,8 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ],
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
-}
-
-SPECTACULAR_SETTINGS = {
-    'TITLE': 'Chat App API',
-    'DESCRIPTION': 'API documentation for the Chat App',
-    'VERSION': '1.0.0',
-    'SERVE_INCLUDE_SCHEMA': False,
-    # Optimizations for Vercel serverless
-    'COMPONENT_SPLIT_REQUEST': True,
-    'SCHEMA_PATH_PREFIX': '/api/',
-    'SERVE_PERMISSIONS': ['rest_framework.permissions.AllowAny'],
-    'SERVERS': [
-        {'url': 'https://chat-messages-ui.vercel.app', 'description': 'Production'},
-        {'url': 'http://localhost:8000', 'description': 'Development'},
-    ],
+    # Use built-in DRF schema - compatible with Vercel serverless
+    'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.openapi.AutoSchema',
 }
 
 ROOT_URLCONF = 'chat_backend.urls'
