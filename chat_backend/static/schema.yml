@@ -79,7 +79,17 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Message'
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Message'
+                  mqtt_service:
+                    type: object
+                    properties:
+                      broker: {type: string}
+                      topic: {type: string}
+                      payload_format: {type: string}
+                      exact_payload_sent: {type: object}
           description: 'Message created and sent via MQTT'
   /api/messages/{id}/delete/:
     delete:
@@ -207,47 +217,6 @@ paths:
                 items:
                   $ref: '#/components/schemas/UserList'
           description: ''
-  /api/mqtt-service/:
-    post:
-      operationId: mqtt_service_create
-      summary: "MQTT SERVICE: Test real-time messaging"
-      description: "Triggers a real-time MQTT notification. Requires authentication to show your actual sender_id."
-      tags:
-      - "Real-time Service"
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                receiver_id:
-                  type: integer
-                  description: "ID of the user who will receive the message"
-                content:
-                  type: string
-                  description: "Text content of the notification"
-              required:
-              - receiver_id
-              - content
-        required: true
-      responses:
-        '200':
-          description: "MQTT details and payload format"
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  info: {type: string}
-                  mqtt_service_details:
-                    type: object
-                    properties:
-                      topic: {type: string}
-                      payload_format: {type: string}
-                      exact_payload_sent: {type: object}
 components:
   schemas:
     AuthToken:
