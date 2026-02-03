@@ -36,6 +36,14 @@
             "dest": "/chat_backend/static/icons/$1"
         },
         {
+            "src": "/swagger.html",
+            "dest": "/chat_backend/static/swagger.html"
+        },
+        {
+            "src": "/redoc.html",
+            "dest": "/chat_backend/static/redoc.html"
+        },
+        {
             "src": "/(.*)",
             "dest": "/chat_backend/static/index.html"
         }
