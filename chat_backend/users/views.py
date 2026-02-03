@@ -84,8 +84,8 @@ class MessageListCreateView(generics.ListCreateAPIView):
         return Response({
             'data': serializer.data,
             'mqtt_service': {
-                'broker': 'mqtt://broker.hivemq.com',
-                'topic': f'chat/user/{message.receiver.id}',
+                'broker': 'mqtt://broker.emqx.io',
+                'topic': f'bishal_chat/user/{message.receiver.id}',
                 'payload_format': 'JSON',
                 'exact_payload_sent': mqtt_payload
             }

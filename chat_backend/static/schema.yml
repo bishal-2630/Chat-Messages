@@ -86,9 +86,9 @@ paths:
                   mqtt_service:
                     type: object
                     properties:
-                      broker: {type: string}
-                      topic: {type: string}
-                      payload_format: {type: string}
+                      broker: {type: string, example: "mqtt://broker.emqx.io"}
+                      topic: {type: string, example: "bishal_chat/user/2"}
+                      payload_format: {type: string, example: "JSON"}
                       exact_payload_sent: {type: object}
           description: 'Message created and sent via MQTT'
   /api/messages/{id}/delete/:
