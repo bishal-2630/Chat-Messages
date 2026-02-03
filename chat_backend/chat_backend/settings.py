@@ -80,6 +80,14 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': 'API documentation for the Chat App',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
+    # Optimizations for Vercel serverless
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SCHEMA_PATH_PREFIX': '/api/',
+    'SERVE_PERMISSIONS': ['rest_framework.permissions.AllowAny'],
+    'SERVERS': [
+        {'url': 'https://chat-messages-ui.vercel.app', 'description': 'Production'},
+        {'url': 'http://localhost:8000', 'description': 'Development'},
+    ],
 }
 
 ROOT_URLCONF = 'chat_backend.urls'
