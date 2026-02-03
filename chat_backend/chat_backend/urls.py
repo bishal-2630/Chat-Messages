@@ -7,15 +7,17 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 from rest_framework.schemas import get_schema_view
+from rest_framework.renderers import JSONOpenAPIRenderer
 
 urlpatterns = [
     path('api/', include('users.urls')),
-    # Use built-in DRF schema - lightweight and Vercel-compatible
+    # Use built-in DRF schema with JSON-only renderer (no PyYAML needed)
     path('api/schema/', get_schema_view(
         title="Chat App API",
         description="API documentation for the Chat App",
         version="1.0.0",
         public=True,
+        renderer_classes=[JSONOpenAPIRenderer],  # Only JSON, no YAML
     ), name='openapi-schema'),
 ]
 
