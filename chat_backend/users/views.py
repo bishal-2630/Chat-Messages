@@ -61,22 +61,34 @@ class MessageListCreateView(generics.ListCreateAPIView):
             print(f"Error in MessageListCreateView: {e}")
             return Message.objects.none()
 
-    def perform_create(self, serializer):
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
         message = serializer.save(sender=self.request.user)
 
         message.is_delivered = True
         message.save()
         
-        # Publish to MQTT for offline notifications
-        print(f"[VIEWS v7] Triggering publish_message for receiver {message.receiver.id}")
-        publish_message(message.receiver.id, {
+        mqtt_payload = {
             'type': 'new_message',
             'id': message.id,
             'sender_id': message.sender.id,
             'sender': message.sender.username,
             'content': message.content,
             'timestamp': str(message.timestamp)
-        })
+        }
+        
+        publish_message(message.receiver.id, mqtt_payload)
+        
+        headers = self.get_success_headers(serializer.data)
+        return Response({
+            'data': serializer.data,
+            'mqtt_debug': {
+                'topic': f'chat/user/{message.receiver.id}',
+                'format': 'JSON',
+                'payload': mqtt_payload
+            }
+        }, status=201, headers=headers)
 
 class MessageDeleteView(generics.DestroyAPIView):
     queryset = Message.objects.all()
@@ -145,27 +157,3 @@ class DebugStateView(APIView):
             status['error'] = str(e)
             
         return Response(status)
-class TestMQTTView(APIView):
-    permission_classes = (AllowAny,) # Allow testing without token for convenience
-
-    def post(self, request):
-        user_id = request.data.get('user_id')
-        message_text = request.data.get('message', 'Test message from Swagger')
-        
-        if not user_id:
-            return Response({'error': 'user_id is required'}, status=400)
-            
-        publish_message(user_id, {
-            'type': 'new_message',
-            'id': 0,
-            'sender_id': 0,
-            'sender': 'System Test',
-            'content': message_text,
-            'timestamp': str(connection.cursor().connection.timestamp() if hasattr(connection.cursor().connection, 'timestamp') else 'now')
-        })
-        
-        return Response({
-            'status': 'success',
-            'message': f'MQTT message sent to user {user_id}',
-            'topic': f'chat/user/{user_id}'
-        })

@@ -1,7 +1,7 @@
 from django.urls import path
 from .views import (
     RegisterView, UserListView, MessageListCreateView, 
-    CustomAuthToken, MessageDeleteView, MarkMessageReadView, TestMQTTView
+    CustomAuthToken, MessageDeleteView, MarkMessageReadView
 )
 
 urlpatterns = [
@@ -11,5 +11,4 @@ urlpatterns = [
     path('messages/', MessageListCreateView.as_view(), name='message-list-create'),
     path('messages/<int:pk>/delete/', MessageDeleteView.as_view(), name='message-delete'),
     path('messages/<int:pk>/read/', MarkMessageReadView.as_view(), name='message-mark-read'),
-    path('test-mqtt/', TestMQTTView.as_view(), name='test-mqtt'),
 ]

@@ -79,7 +79,16 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Message'
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Message'
+                  mqtt_debug:
+                    type: object
+                    properties:
+                      topic: {type: string}
+                      format: {type: string}
+                      payload: {type: object}
           description: ''
       callbacks:
         new_message_notification:
