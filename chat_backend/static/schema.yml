@@ -79,41 +79,8 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/Message'
-                  mqtt_debug:
-                    type: object
-                    properties:
-                      topic: {type: string}
-                      format: {type: string}
-                      payload: {type: object}
-          description: ''
-      callbacks:
-        new_message_notification:
-          'mqtt://broker.hivemq.com/chat/user/{receiver_id}':
-            post:
-              summary: Real-time notification sent to receiver
-              description: Sent via MQTT when a new message is created
-              parameters:
-              - name: receiver_id
-                in: path
-                required: true
-                schema:
-                  type: integer
-              requestBody:
-                content:
-                  application/json:
-                    schema:
-                      type: object
-                      properties:
-                        type: {type: string, example: "new_message"}
-                        id: {type: integer, example: 123}
-                        sender_id: {type: integer, example: 1}
-                        sender: {type: string, example: "john_doe"}
-                        content: {type: string, example: "Hello!"}
-                        timestamp: {type: string, format: date-time}
+                $ref: '#/components/schemas/Message'
+          description: 'Message created and sent via MQTT'
   /api/messages/{id}/delete/:
     delete:
       operationId: messages_delete_destroy
@@ -131,25 +98,6 @@ paths:
       responses:
         '204':
           description: No response body
-      callbacks:
-        message_deleted_notification:
-          'mqtt://broker.hivemq.com/chat/user/{receiver_id}':
-            post:
-              summary: Notification sent to receiver when a message is deleted
-              parameters:
-              - name: receiver_id
-                in: path
-                required: true
-                schema:
-                  type: integer
-              requestBody:
-                content:
-                  application/json:
-                    schema:
-                      type: object
-                      properties:
-                        type: {type: string, example: "message_deleted"}
-                        message_id: {type: integer, example: 123}
   /api/messages/{id}/read/:
     put:
       operationId: messages_read_update
@@ -183,25 +131,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/Message'
           description: ''
-      callbacks:
-        message_read_notification:
-          'mqtt://broker.hivemq.com/chat/user/{sender_id}':
-            post:
-              summary: Notification sent to sender when their message is read
-              parameters:
-              - name: sender_id
-                in: path
-                required: true
-                schema:
-                  type: integer
-              requestBody:
-                content:
-                  application/json:
-                    schema:
-                      type: object
-                      properties:
-                        type: {type: string, example: "message_read"}
-                        message_id: {type: integer, example: 123}
     patch:
       operationId: messages_read_partial_update
       parameters:
@@ -278,39 +207,44 @@ paths:
                 items:
                   $ref: '#/components/schemas/UserList'
           description: ''
-  /api/test-mqtt/:
+  /api/mqtt-service/:
     post:
-      operationId: test_mqtt_create
-      summary: "DEVELOPER TOOL: Send a test MQTT message"
-      description: "Triggers a real-time MQTT notification to the specified user for testing. No token required."
+      operationId: mqtt_service_create
+      summary: "MQTT SERVICE: Test real-time messaging"
+      description: "Triggers a real-time MQTT notification. Use this to see the exact topic and payload format."
       tags:
-      - "Testing"
+      - "Real-time Service"
       requestBody:
         content:
           application/json:
             schema:
               type: object
               properties:
-                user_id:
+                receiver_id:
                   type: integer
-                  description: "ID of the user to notify"
-                message:
+                  description: "ID of the user who will receive the message"
+                content:
                   type: string
-                  description: "Custom message text"
+                  description: "Text content of the notification"
               required:
-              - user_id
+              - receiver_id
+              - content
         required: true
       responses:
         '200':
-          description: "MQTT message triggered successfully"
+          description: "MQTT details and payload format"
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  status: {type: string}
-                  message: {type: string}
-                  topic: {type: string}
+                  info: {type: string}
+                  mqtt_service_details:
+                    type: object
+                    properties:
+                      topic: {type: string}
+                      payload_format: {type: string}
+                      exact_payload_sent: {type: object}
 components:
   schemas:
     AuthToken:

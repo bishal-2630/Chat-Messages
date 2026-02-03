@@ -61,34 +61,53 @@ class MessageListCreateView(generics.ListCreateAPIView):
             print(f"Error in MessageListCreateView: {e}")
             return Message.objects.none()
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+    def perform_create(self, serializer):
         message = serializer.save(sender=self.request.user)
-
         message.is_delivered = True
         message.save()
         
-        mqtt_payload = {
+        publish_message(message.receiver.id, {
             'type': 'new_message',
             'id': message.id,
             'sender_id': message.sender.id,
             'sender': message.sender.username,
             'content': message.content,
             'timestamp': str(message.timestamp)
+        })
+
+class MQTTSendView(APIView):
+    """
+    Dedicated endpoint to test MQTT service and see the exact message format.
+    """
+    permission_classes = (AllowAny,)
+
+    def post(self, request):
+        receiver_id = request.data.get('receiver_id')
+        content = request.data.get('content')
+        
+        if not receiver_id or not content:
+            return Response({'error': 'receiver_id and content are required'}, status=400)
+            
+        mqtt_payload = {
+            'type': 'new_message',
+            'id': 0, # Test ID
+            'sender_id': 0, # system ID
+            'sender': 'MQTT_SERVICE_TEST',
+            'content': content,
+            'timestamp': '2026-02-03T07:44:00Z' # Fixed example timestamp
         }
         
-        publish_message(message.receiver.id, mqtt_payload)
+        topic = f'chat/user/{receiver_id}'
+        publish_message(receiver_id, mqtt_payload)
         
-        headers = self.get_success_headers(serializer.data)
         return Response({
-            'data': serializer.data,
-            'mqtt_debug': {
-                'topic': f'chat/user/{message.receiver.id}',
-                'format': 'JSON',
-                'payload': mqtt_payload
+            'info': 'MQTT message sent successfully',
+            'mqtt_service_details': {
+                'topic': topic,
+                'payload_format': 'JSON',
+                'exact_payload_sent': mqtt_payload
             }
-        }, status=201, headers=headers)
+        })
 
 class MessageDeleteView(generics.DestroyAPIView):
     queryset = Message.objects.all()
